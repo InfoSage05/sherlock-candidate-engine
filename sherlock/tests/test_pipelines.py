@@ -115,3 +115,13 @@ def test_transcription_produces_segment():
     seg = empty[0]
     assert seg.participant_id == "candidate"
     assert seg.is_question is True
+
+
+if __name__ == "__main__":
+    test_deepfake_flags_high_score()
+    test_deepfake_ignores_low_score()
+    test_voice_flags_high_score()
+    test_speaker_store_detects_drift()
+    test_gaze_flags_periodic_offscreen()
+    test_transcription_produces_segment()
+    print("All pipeline tests passed!")

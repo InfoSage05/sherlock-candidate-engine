@@ -58,3 +58,10 @@ def test_gate_switches_candidate_mid_call():
     assert out_bob.candidate_id == "bob"
     flags = gate.consume_flags()
     assert any(f.source == SignalSource.JOIN_TIMING for f in flags)
+
+
+if __name__ == "__main__":
+    test_gate_passes_only_candidate_frames()
+    test_gate_emits_warning_when_identity_ambiguous()
+    test_gate_switches_candidate_mid_call()
+    print("All gate tests passed!")

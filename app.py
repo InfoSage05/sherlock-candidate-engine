@@ -16,6 +16,14 @@ from sherlock.feedback import FeedbackLoop
 from sherlock.models import FlagSeverity, SignalAxis, SignalSource
 from sherlock.session_replay import SessionReplay, list_available_fixtures, load_fixture
 
+# Optional live A/V analysis (experimental). Guarded so a missing dependency
+# never breaks the fixture demo.
+try:
+    from sherlock.live import LiveSession
+    _LIVE_AVAILABLE = True
+except Exception:  # pragma: no cover
+    _LIVE_AVAILABLE = False
+
 
 # ============================================================================
 # CONFIGURATION & STYLING
@@ -295,6 +303,8 @@ def init_session_state():
         st.session_state.selected_candidate = None
     if "active_tab" not in st.session_state:
         st.session_state.active_tab = 0
+    if "live_session" not in st.session_state:
+        st.session_state.live_session = None
 
 
 init_session_state()
@@ -1070,6 +1080,59 @@ def render_bottom_bar():
 # MAIN APP
 # ============================================================================
 
+def render_live_panel():
+    """Experimental live A/V analysis (Prompt 10.3.7).
+
+    Runs independently of the fixture replay: it launches the real-time
+    orchestrator on a media file (or a synthetic frame stream) and displays the
+    live candidate identification plus any authenticity flags. Only the
+    identified candidate's frames are analyzed.
+    """
+    if not _LIVE_AVAILABLE:
+        return
+    with st.expander("🟢 Live A/V Analysis (experimental)", expanded=False):
+        st.caption(
+            "Runs the real-time orchestrator on a media file (or synthetic frames). "
+            "Only the identified candidate's frames are sent to fraud-detection pipelines."
+        )
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            file_path = st.text_input("Media file path (blank = synthetic)", key="live_path")
+        with col2:
+            cand_name = st.text_input("Candidate name", value="Candidate", key="live_cand")
+        bcol1, bcol2 = st.columns(2)
+        with bcol1:
+            if st.button("▶ Start live", key="live_start"):
+                sess = LiveSession()
+                sess.start(file_path if file_path else None, candidate_name=cand_name)
+                st.session_state.live_session = sess
+                st.rerun()
+        with bcol2:
+            if st.button("■ Stop live", key="live_stop"):
+                if st.session_state.live_session:
+                    st.session_state.live_session.stop()
+                st.session_state.live_session = None
+                st.rerun()
+
+        sess = st.session_state.live_session
+        if sess:
+            status = sess.refresh_status()
+            st.write(f"**State:** {status['state']}")
+            st.write(
+                f"**Top candidate:** {status['top_candidate_id']} "
+                f"({status['confidence']:.1%} confidence)"
+            )
+            st.write(
+                f"**p95 latency:** {status['p95_latency_ms']:.1f} ms | "
+                f"**non-candidate frames dropped:** {status['dropped_non_candidate']}"
+            )
+            if status["flags"]:
+                for f in status["flags"]:
+                    st.warning(f"[{f['severity']}] {f['source']}: {f['rationale']}")
+            else:
+                st.info("No active flags.")
+
+
 def main():
     """Main application entry point."""
     st.title("🔍 Sherlock — Candidate Identification Engine")
@@ -1077,6 +1140,9 @@ def main():
 
     # Top bar (always visible)
     render_top_bar()
+
+    # Experimental live A/V analysis (independent of the fixture replay).
+    render_live_panel()
 
     if st.session_state.replay is None:
         render_landing_page()

@@ -69,3 +69,8 @@ class _FakeTranscriberTranscription:
         from sherlock.pipelines import LiveTranscriptionPipeline
 
         return LiveTranscriptionPipeline(context, transcriber=_FakeTranscriber())
+
+
+if __name__ == "__main__":
+    test_orchestrator_routes_candidate_media_to_pipelines()
+    print("All orchestrator tests passed!")
