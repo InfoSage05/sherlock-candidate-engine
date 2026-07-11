@@ -1,0 +1,166 @@
+{
+  "meeting_context": {
+    "meeting_id": "silent-observer",
+    "candidate_name": "Nina Patel",
+    "candidate_email": "nina.patel@example.com",
+    "interviewer_names": [
+      "Mark Johnson"
+    ],
+    "interviewer_emails": [
+      "mark.johnson@company.com"
+    ],
+    "scheduled_start": "2024-01-15T09:00:00",
+    "participants": {
+      "nina": {
+        "display_name": "Nina Patel",
+        "email": "nina.patel@example.com",
+        "join_time": "2024-01-15T08:59:30",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "mark": {
+        "display_name": "Mark Johnson",
+        "email": "mark.johnson@company.com",
+        "join_time": "2024-01-15T08:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "olivia": {
+        "display_name": "Olivia Martinez",
+        "email": "olivia.martinez@company.com",
+        "join_time": "2024-01-15T08:59:15",
+        "webcam_on": false,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "nina",
+      "delta_log_odds": 5.0,
+      "confidence": 1.0,
+      "rationale": "Name similarity 1.00 between 'Nina Patel' and 'Nina Patel'; Exact email match with calendar invite",
+      "timestamp": "2026-07-09T13:08:50.868716",
+      "metadata": {
+        "candidate_name": "Nina Patel",
+        "participant_name": "Nina Patel"
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "mark",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Name matches known interviewer: 'Mark Johnson'",
+      "timestamp": "2026-07-09T13:08:50.868782",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "nina",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -30s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.868807",
+      "metadata": {
+        "join_offset_seconds": -30.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "mark",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.868807",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "olivia",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -45s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.868807",
+      "metadata": {
+        "join_offset_seconds": -45.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "nina",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 2 responses to questions (in-degree: 2, out-degree: 0)",
+      "timestamp": "2026-07-09T13:08:50.868836",
+      "metadata": {
+        "in_degree": 2,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "nina",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Nina Patel)",
+      "timestamp": "2026-07-09T13:08:50.868853",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "mark",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Mark Johnson)",
+      "timestamp": "2026-07-09T13:08:50.868853",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "mark",
+      "text": "Tell me about your experience with DevOps practices.",
+      "start_time": "2024-01-15T09:01:00",
+      "end_time": "2024-01-15T09:01:10",
+      "is_question": true
+    },
+    {
+      "participant_id": "nina",
+      "text": "I've been implementing CI/CD pipelines for the past 3 years. I work with Jenkins, GitLab CI, and GitHub Actions.",
+      "start_time": "2024-01-15T09:01:20",
+      "end_time": "2024-01-15T09:01:30",
+      "is_question": false
+    },
+    {
+      "participant_id": "mark",
+      "text": "How do you ensure deployment reliability?",
+      "start_time": "2024-01-15T09:01:40",
+      "end_time": "2024-01-15T09:01:50",
+      "is_question": true
+    },
+    {
+      "participant_id": "nina",
+      "text": "I use infrastructure as code with Terraform, implement blue-green deployments, and have comprehensive monitoring with Prometheus and Grafana.",
+      "start_time": "2024-01-15T09:02:00",
+      "end_time": "2024-01-15T09:02:10",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Silent Observer",
+    "description": "Three participants: candidate, interviewer, and a silent observer who never speaks",
+    "difficulty": "medium"
+  }
+}

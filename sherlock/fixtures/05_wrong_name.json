@@ -1,0 +1,147 @@
+{
+  "meeting_context": {
+    "meeting_id": "wrong-name",
+    "candidate_name": "Jessica Williams",
+    "candidate_email": "maria.garcia@example.com",
+    "interviewer_names": [
+      "Tom Anderson"
+    ],
+    "interviewer_emails": [
+      "tom.anderson@company.com"
+    ],
+    "scheduled_start": "2024-01-15T16:00:00",
+    "participants": {
+      "maria": {
+        "display_name": "Maria Garcia",
+        "email": "maria.garcia@example.com",
+        "join_time": "2024-01-15T15:59:30",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "tom": {
+        "display_name": "Tom Anderson",
+        "email": "tom.anderson@company.com",
+        "join_time": "2024-01-15T15:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "maria",
+      "delta_log_odds": 3.0,
+      "confidence": 1.0,
+      "rationale": "Exact email match with calendar invite",
+      "timestamp": "2026-07-09T13:08:50.866989",
+      "metadata": {
+        "candidate_name": "Jessica Williams",
+        "participant_name": "Maria Garcia"
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "tom",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Name matches known interviewer: 'Tom Anderson'",
+      "timestamp": "2026-07-09T13:08:50.867102",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "maria",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -30s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.867127",
+      "metadata": {
+        "join_offset_seconds": -30.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "tom",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.867127",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "maria",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 2 responses to questions (in-degree: 2, out-degree: 0)",
+      "timestamp": "2026-07-09T13:08:50.867157",
+      "metadata": {
+        "in_degree": 2,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "maria",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Maria Garcia)",
+      "timestamp": "2026-07-09T13:08:50.867176",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "tom",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Tom Anderson)",
+      "timestamp": "2026-07-09T13:08:50.867176",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "tom",
+      "text": "Hi Jessica! Welcome to the interview.",
+      "start_time": "2024-01-15T16:01:00",
+      "end_time": "2024-01-15T16:01:10",
+      "is_question": true
+    },
+    {
+      "participant_id": "maria",
+      "text": "Actually, my name is Maria. There might have been a mix-up with the calendar invite.",
+      "start_time": "2024-01-15T16:01:18",
+      "end_time": "2024-01-15T16:01:28",
+      "is_question": false
+    },
+    {
+      "participant_id": "tom",
+      "text": "Oh, I apologize Maria! Let me correct that. Let's get started with your background.",
+      "start_time": "2024-01-15T16:01:36",
+      "end_time": "2024-01-15T16:01:46",
+      "is_question": true
+    },
+    {
+      "participant_id": "maria",
+      "text": "No problem! I'm a data scientist with 8 years of experience. I specialize in NLP and have built several production ML systems.",
+      "start_time": "2024-01-15T16:01:54",
+      "end_time": "2024-01-15T16:02:04",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Wrong Name in Calendar",
+    "description": "Calendar has wrong name but correct email - system must use email match",
+    "difficulty": "hard"
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "meeting_context": {
+    "meeting_id": "nickname",
+    "candidate_name": "Alexander Thompson",
+    "candidate_email": "alex.thompson@example.com",
+    "interviewer_names": [
+      "Sarah Connor"
+    ],
+    "interviewer_emails": [
+      "sarah.connor@company.com"
+    ],
+    "scheduled_start": "2024-01-15T15:00:00",
+    "participants": {
+      "alex": {
+        "display_name": "Alex T.",
+        "email": "alex.thompson@example.com",
+        "join_time": "2024-01-15T14:59:35",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "sarah": {
+        "display_name": "Sarah Connor",
+        "email": "sarah.connor@company.com",
+        "join_time": "2024-01-15T14:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "alex",
+      "delta_log_odds": 3.0,
+      "confidence": 1.0,
+      "rationale": "Exact email match with calendar invite",
+      "timestamp": "2026-07-09T13:08:50.865087",
+      "metadata": {
+        "candidate_name": "Alexander Thompson",
+        "participant_name": "Alex T."
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "sarah",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Email matches known interviewer: 'sarah.connor@company.com'",
+      "timestamp": "2026-07-09T13:08:50.865286",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "alex",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -25s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.865440",
+      "metadata": {
+        "join_offset_seconds": -25.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "sarah",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.865440",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "alex",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 2 responses to questions (in-degree: 2, out-degree: 0)",
+      "timestamp": "2026-07-09T13:08:50.865510",
+      "metadata": {
+        "in_degree": 2,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "alex",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Alex T.)",
+      "timestamp": "2026-07-09T13:08:50.865546",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "sarah",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Sarah Connor)",
+      "timestamp": "2026-07-09T13:08:50.865546",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "sarah",
+      "text": "Hi Alex! Thanks for joining. Let's talk about your frontend experience.",
+      "start_time": "2024-01-15T15:01:00",
+      "end_time": "2024-01-15T15:01:10",
+      "is_question": true
+    },
+    {
+      "participant_id": "alex",
+      "text": "Sure! I've been doing frontend development for 6 years, mostly with React and TypeScript. I'm passionate about performance optimization and accessibility.",
+      "start_time": "2024-01-15T15:01:20",
+      "end_time": "2024-01-15T15:01:30",
+      "is_question": false
+    },
+    {
+      "participant_id": "sarah",
+      "text": "How do you approach performance optimization in React applications?",
+      "start_time": "2024-01-15T15:01:40",
+      "end_time": "2024-01-15T15:01:50",
+      "is_question": true
+    },
+    {
+      "participant_id": "alex",
+      "text": "I start with profiling using React DevTools to identify bottlenecks. Then I focus on code splitting, memoization with useMemo and useCallback, and virtualizing long lists. I also pay attention to bundle size and lazy loading.",
+      "start_time": "2024-01-15T15:02:00",
+      "end_time": "2024-01-15T15:02:10",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Nickname Join",
+    "description": "Candidate joins as 'Alex T.' but calendar says 'Alexander Thompson'",
+    "difficulty": "medium"
+  }
+}

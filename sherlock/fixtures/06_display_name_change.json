@@ -1,0 +1,160 @@
+{
+  "meeting_context": {
+    "meeting_id": "name-change",
+    "candidate_name": "David Kim",
+    "candidate_email": "david.kim@example.com",
+    "interviewer_names": [
+      "Lisa Chen"
+    ],
+    "interviewer_emails": [
+      "lisa.chen@company.com"
+    ],
+    "scheduled_start": "2024-01-15T17:00:00",
+    "participants": {
+      "david": {
+        "display_name": "David Kim",
+        "email": "david.kim@example.com",
+        "join_time": "2024-01-15T16:59:30",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "lisa": {
+        "display_name": "Lisa Chen",
+        "email": "lisa.chen@company.com",
+        "join_time": "2024-01-15T16:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "display_name_change",
+      "axis": "identity",
+      "target_participant_id": "david",
+      "delta_log_odds": 0.5,
+      "confidence": 0.7,
+      "rationale": "Display name changed from 'David Kim' to 'Dave K.'",
+      "timestamp": "2024-01-15T17:05:00",
+      "metadata": {
+        "old_name": "David Kim",
+        "new_name": "Dave K."
+      }
+    },
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "david",
+      "delta_log_odds": 5.0,
+      "confidence": 1.0,
+      "rationale": "Name similarity 1.00 between 'David Kim' and 'David Kim'; Exact email match with calendar invite",
+      "timestamp": "2026-07-09T13:08:50.867886",
+      "metadata": {
+        "candidate_name": "David Kim",
+        "participant_name": "David Kim"
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "lisa",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Email matches known interviewer: 'lisa.chen@company.com'",
+      "timestamp": "2026-07-09T13:08:50.867944",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "david",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -30s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.867966",
+      "metadata": {
+        "join_offset_seconds": -30.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "lisa",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.867966",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "david",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 2 responses to questions (in-degree: 2, out-degree: 0)",
+      "timestamp": "2026-07-09T13:08:50.868011",
+      "metadata": {
+        "in_degree": 2,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "david",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: David Kim)",
+      "timestamp": "2026-07-09T13:08:50.868028",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "lisa",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Lisa Chen)",
+      "timestamp": "2026-07-09T13:08:50.868028",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "lisa",
+      "text": "Let's discuss your backend experience.",
+      "start_time": "2024-01-15T17:01:00",
+      "end_time": "2024-01-15T17:01:08",
+      "is_question": true
+    },
+    {
+      "participant_id": "david",
+      "text": "I've been working with Java and Spring Boot for 5 years. I've built several REST APIs and microservices.",
+      "start_time": "2024-01-15T17:01:15",
+      "end_time": "2024-01-15T17:01:23",
+      "is_question": false
+    },
+    {
+      "participant_id": "lisa",
+      "text": "How do you handle database migrations in production?",
+      "start_time": "2024-01-15T17:06:00",
+      "end_time": "2024-01-15T17:06:10",
+      "is_question": true
+    },
+    {
+      "participant_id": "david",
+      "text": "I use tools like Flyway for schema versioning. I always test migrations in staging first and have rollback scripts ready.",
+      "start_time": "2024-01-15T17:06:20",
+      "end_time": "2024-01-15T17:06:30",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Display Name Change Mid-Call",
+    "description": "Candidate changes display name from 'David Kim' to 'Dave K.' during interview",
+    "difficulty": "hard"
+  }
+}

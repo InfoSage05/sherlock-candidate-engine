@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+myenv/
+
+# IDE configurations
+.vscode/
+.idea/
+
+# Environment secrets (crucial to not commit API keys)
+.env
+.env.local
+.env.*
+
+# Python testing / cache
+.pytest_cache/
+.coverage
+htmlcov/

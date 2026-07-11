@@ -1,0 +1,161 @@
+{
+  "meeting_context": {
+    "meeting_id": "normal-interview",
+    "candidate_name": "Alice Johnson",
+    "candidate_email": "alice.johnson@example.com",
+    "interviewer_names": [
+      "Bob Smith"
+    ],
+    "interviewer_emails": [
+      "bob.smith@company.com"
+    ],
+    "scheduled_start": "2024-01-15T10:00:00",
+    "participants": {
+      "alice": {
+        "display_name": "Alice Johnson",
+        "email": "alice.johnson@example.com",
+        "join_time": "2024-01-15T09:59:30",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "bob": {
+        "display_name": "Bob Smith",
+        "email": "bob.smith@company.com",
+        "join_time": "2024-01-15T09:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "alice",
+      "delta_log_odds": 5.0,
+      "confidence": 1.0,
+      "rationale": "Name similarity 1.00 between 'Alice Johnson' and 'Alice Johnson'; Exact email match with calendar invite",
+      "timestamp": "2024-01-15T10:00:00",
+      "metadata": {
+        "candidate_name": "Alice Johnson",
+        "participant_name": "Alice Johnson"
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "bob",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Name matches known interviewer: 'Bob Smith'",
+      "timestamp": "2024-01-15T10:04:17.142857",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "alice",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -30s relative to scheduled start (within expected window)",
+      "timestamp": "2024-01-15T10:08:34.285714",
+      "metadata": {
+        "join_offset_seconds": -30.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "bob",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2024-01-15T10:12:51.428571",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "alice",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 3 responses to questions (in-degree: 3, out-degree: 0)",
+      "timestamp": "2024-01-15T10:17:08.571428",
+      "metadata": {
+        "in_degree": 3,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "alice",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Alice Johnson)",
+      "timestamp": "2024-01-15T10:21:25.714285",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "bob",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Bob Smith)",
+      "timestamp": "2024-01-15T10:25:42.857142",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "bob",
+      "text": "Can you tell me about your experience with machine learning?",
+      "start_time": "2024-01-15T10:01:00",
+      "end_time": "2024-01-15T10:01:08",
+      "is_question": true
+    },
+    {
+      "participant_id": "alice",
+      "text": "I've been working with ML for about 5 years. At my last company, I led a team that built a recommendation system that improved user engagement by 30%.",
+      "start_time": "2024-01-15T10:01:15",
+      "end_time": "2024-01-15T10:01:23",
+      "is_question": false
+    },
+    {
+      "participant_id": "bob",
+      "text": "That's impressive. What frameworks do you typically use?",
+      "start_time": "2024-01-15T10:01:30",
+      "end_time": "2024-01-15T10:01:38",
+      "is_question": true
+    },
+    {
+      "participant_id": "alice",
+      "text": "I primarily use PyTorch for deep learning work, and scikit-learn for traditional ML. I'm also familiar with TensorFlow from my earlier projects.",
+      "start_time": "2024-01-15T10:01:45",
+      "end_time": "2024-01-15T10:01:53",
+      "is_question": false
+    },
+    {
+      "participant_id": "bob",
+      "text": "How do you handle overfitting in your models?",
+      "start_time": "2024-01-15T10:02:00",
+      "end_time": "2024-01-15T10:02:08",
+      "is_question": true
+    },
+    {
+      "participant_id": "alice",
+      "text": "I use several techniques: cross-validation, regularization, dropout for neural networks, and early stopping. I also make sure to have a proper train-validation-test split.",
+      "start_time": "2024-01-15T10:02:15",
+      "end_time": "2024-01-15T10:02:23",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Normal Interview",
+    "description": "Standard interview with clear candidate identification",
+    "difficulty": "easy"
+  }
+}

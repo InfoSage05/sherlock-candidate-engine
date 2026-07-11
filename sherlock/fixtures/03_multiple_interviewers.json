@@ -1,0 +1,221 @@
+{
+  "meeting_context": {
+    "meeting_id": "multiple-interviewers",
+    "candidate_name": "Eve Davis",
+    "candidate_email": "eve.davis@example.com",
+    "interviewer_names": [
+      "Frank Miller",
+      "Grace Lee"
+    ],
+    "interviewer_emails": [
+      "frank.miller@company.com",
+      "grace.lee@company.com"
+    ],
+    "scheduled_start": "2024-01-15T14:00:00",
+    "participants": {
+      "eve": {
+        "display_name": "Eve Davis",
+        "email": "eve.davis@example.com",
+        "join_time": "2024-01-15T13:59:30",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "frank": {
+        "display_name": "Frank Miller",
+        "email": "frank.miller@company.com",
+        "join_time": "2024-01-15T13:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "grace": {
+        "display_name": "Grace Lee",
+        "email": "grace.lee@company.com",
+        "join_time": "2024-01-15T13:59:00",
+        "webcam_on": true,
+        "is_screen_sharing": false
+      },
+      "henry": {
+        "display_name": "Henry Wilson",
+        "email": "henry.wilson@company.com",
+        "join_time": "2024-01-15T13:59:15",
+        "webcam_on": false,
+        "is_screen_sharing": false
+      }
+    }
+  },
+  "evidence_packets": [
+    {
+      "source": "calendar_match",
+      "axis": "identity",
+      "target_participant_id": "eve",
+      "delta_log_odds": 5.0,
+      "confidence": 1.0,
+      "rationale": "Name similarity 1.00 between 'Eve Davis' and 'Eve Davis'; Exact email match with calendar invite",
+      "timestamp": "2026-07-09T13:08:50.863376",
+      "metadata": {
+        "candidate_name": "Eve Davis",
+        "participant_name": "Eve Davis"
+      }
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "frank",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Name matches known interviewer: 'Frank Miller'",
+      "timestamp": "2026-07-09T13:08:50.863573",
+      "metadata": {}
+    },
+    {
+      "source": "interviewer_negative",
+      "axis": "identity",
+      "target_participant_id": "grace",
+      "delta_log_odds": -2.5,
+      "confidence": 0.9,
+      "rationale": "Name matches known interviewer: 'Grace Lee'",
+      "timestamp": "2026-07-09T13:08:50.863573",
+      "metadata": {}
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "eve",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -30s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.863659",
+      "metadata": {
+        "join_offset_seconds": -30.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "frank",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.863659",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "grace",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -60s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.863659",
+      "metadata": {
+        "join_offset_seconds": -60.0
+      }
+    },
+    {
+      "source": "join_timing",
+      "axis": "identity",
+      "target_participant_id": "henry",
+      "delta_log_odds": 1.0,
+      "confidence": 0.6,
+      "rationale": "Joined -45s relative to scheduled start (within expected window)",
+      "timestamp": "2026-07-09T13:08:50.863659",
+      "metadata": {
+        "join_offset_seconds": -45.0
+      }
+    },
+    {
+      "source": "turn_taking",
+      "axis": "identity",
+      "target_participant_id": "eve",
+      "delta_log_odds": 2.0,
+      "confidence": 1.0,
+      "rationale": "Received 3 responses to questions (in-degree: 3, out-degree: 0)",
+      "timestamp": "2026-07-09T13:08:50.863730",
+      "metadata": {
+        "in_degree": 3,
+        "out_degree": 0
+      }
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "eve",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Eve Davis)",
+      "timestamp": "2026-07-09T13:08:50.863765",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "frank",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Frank Miller)",
+      "timestamp": "2026-07-09T13:08:50.863765",
+      "metadata": {}
+    },
+    {
+      "source": "webcam_state",
+      "axis": "identity",
+      "target_participant_id": "grace",
+      "delta_log_odds": 0.3,
+      "confidence": 0.3,
+      "rationale": "Webcam is on (participant: Grace Lee)",
+      "timestamp": "2026-07-09T13:08:50.863765",
+      "metadata": {}
+    }
+  ],
+  "transcript_segments": [
+    {
+      "participant_id": "frank",
+      "text": "Let's start with your technical background. What's your experience with cloud architecture?",
+      "start_time": "2024-01-15T14:01:00",
+      "end_time": "2024-01-15T14:01:10",
+      "is_question": true
+    },
+    {
+      "participant_id": "eve",
+      "text": "I've been working with AWS for the past 4 years. I'm certified as a Solutions Architect Professional and have designed several large-scale distributed systems.",
+      "start_time": "2024-01-15T14:01:18",
+      "end_time": "2024-01-15T14:01:28",
+      "is_question": false
+    },
+    {
+      "participant_id": "grace",
+      "text": "That's great. Can you give me an example of how you've handled a production incident?",
+      "start_time": "2024-01-15T14:01:36",
+      "end_time": "2024-01-15T14:01:46",
+      "is_question": true
+    },
+    {
+      "participant_id": "eve",
+      "text": "Last month, we had a critical database outage during peak traffic. I led the incident response, coordinated with the DBA team, and we restored service within 15 minutes. Afterward, I implemented better monitoring and failover mechanisms.",
+      "start_time": "2024-01-15T14:01:54",
+      "end_time": "2024-01-15T14:02:04",
+      "is_question": false
+    },
+    {
+      "participant_id": "frank",
+      "text": "Excellent. How do you approach system design for high availability?",
+      "start_time": "2024-01-15T14:02:12",
+      "end_time": "2024-01-15T14:02:22",
+      "is_question": true
+    },
+    {
+      "participant_id": "eve",
+      "text": "I focus on redundancy, circuit breakers, and graceful degradation. I also believe in chaos engineering - regularly testing failure scenarios in staging environments.",
+      "start_time": "2024-01-15T14:02:30",
+      "end_time": "2024-01-15T14:02:40",
+      "is_question": false
+    }
+  ],
+  "metadata": {
+    "name": "Multiple Interviewers + Silent Observer",
+    "description": "Two interviewers, one candidate, and a silent observer",
+    "difficulty": "hard"
+  }
+}
