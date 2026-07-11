@@ -1,45 +1,87 @@
 # Test Videos for Sherlock Pipeline
 
-To test the multi-signal Bayesian engine with real human candidates (rather than synthetic patterns or random video files like Big Buck Bunny), use the links and scripts below to populate this folder.
+## Real Interview Videos (Downloaded from YouTube)
 
----
+### 1. interview_2min.mp4 (3.2 MB)
+- **Duration**: 2:14
+- **Content**: Job Interview practice
+- **Source**: https://www.youtube.com/watch?v=ExJZAegsOis
+- **Use case**: Test normal interview scenario
 
-## Selected Mock Interview Videos
+### 2. interview_esl_1min.mp4 (5.1 MB)
+- **Duration**: 1:45
+- **Content**: Job Interview: I Want to Learn (ESL)
+- **Source**: https://www.youtube.com/watch?v=naIkpQ_cIt0
+- **Use case**: Test with non-native English speaker
 
-These YouTube videos represent realistic software engineering technical and behavioral interviews for students:
+### 3. interview_dialogue_2min.mp4 (2.7 MB)
+- **Duration**: 2:10
+- **Content**: Interviewing for a Job – Everyday English Dialogues
+- **Source**: https://www.youtube.com/watch?v=w0YQwglgtTM
+- **Use case**: Test dialogue/conversation scenario
 
-1. **Google Coding Interview with a College Student**
-   * **URL**: [https://www.youtube.com/watch?v=1t1_a1bz0_Y](https://www.youtube.com/watch?v=1t1_a1bz0_Y)
-   * **Description**: A full 45-minute mock technical interview conducted by Clément Mihailescu (ex-Google) with a college student candidate. Excellent for testing speaking ratios, turn-taking graphs, and coding cadence.
+## Synthetic Videos (Generated)
 
-2. **How to: Work at Google — Example Coding/Engineering Interview**
-   * **URL**: [https://www.youtube.com/watch?v=XZzt21dWyJw](https://www.youtube.com/watch?v=XZzt21dWyJw)
-   * **Description**: Official mock coding interview video from the *Life at Google* channel demonstrating Google engineers conducting a technical assessment. Very clean audio and high-fidelity video streams.
+### 4. synthetic_interview.mp4 (774 KB)
+- **Duration**: 12 seconds
+- **Content**: Animated face with moving mouth (simulating speaking)
+- **Use case**: Test basic face detection and mouth movement
 
-3. **Mock Coding Interview with a Google Engineer** (Exponent)
-   * **URL**: [https://www.youtube.com/watch?v=d_kXpewAOH0](https://www.youtube.com/watch?v=d_kXpewAOH0)
-   * **Description**: A realistic, detailed software engineering coding interview from the Exponent channel.
+### 5. synthetic_looking_away.mp4 (527 KB)
+- **Duration**: 12 seconds
+- **Content**: Animated face positioned to the side (looking away)
+- **Use case**: Test gaze detection pipeline
 
-4. **Behavioral Mock Interview (Jobs/Internships)**
-   * **URL**: [https://www.youtube.com/watch?v=Feg16qXV9Dj](https://www.youtube.com/watch?v=Feg16qXV9Dj)
-   * **Description**: A walkthrough of common behavioral interview questions with structured student answers, perfect for testing response pause latencies and disfluency anomalies.
+### 6. bbb.mp4 (771 KB)
+- **Duration**: ~10 seconds
+- **Content**: Big Buck Bunny animation clip
+- **Source**: https://www.w3schools.com/html/mov_bbb.mp4
+- **Use case**: Test with animated content (no real face)
 
----
+## How to Test
 
-## How to Download These Videos
-
-Because the AI IDE environment runs inside a sandboxed network that blocks direct connections to external media servers like YouTube, you should run the download script from your **local machine's terminal** (outside the IDE sandbox).
-
-### Instructions
-
-1. Open a terminal on your host machine.
-2. Navigate to this project folder:
+1. **Start the Streamlit server**:
    ```bash
-   cd "e:\Machine Learning\ML Assignment"
-   ```
-3. Run the download script:
-   ```bash
-   python test_videos/download_interviews.py
+   python3 -m streamlit run app.py --server.headless true --server.port 8501
    ```
 
-The script will automatically install `yt-dlp` (if not already present) and download low-resolution, lightweight versions of these interviews directly into this `test_videos/` directory for testing!
+2. **Open browser**: http://localhost:8501
+
+3. **Load a scenario** from the dropdown and click "Load Scenario"
+
+4. **Use Live A/V Analysis**:
+   - Expand the " Live A/V Analysis (experimental)" section in the sidebar
+   - Enter the path to one of the videos:
+     ```
+     /mnt/e/Machine Learning/ML Assignment/test_videos/interview_2min.mp4
+     ```
+   - Click "▶ Start live"
+
+5. **Watch the results**:
+   - Confidence scores update in real-time
+   - Active flags appear if anomalies are detected
+   - Latency metrics show processing speed
+
+## Expected Results
+
+- **Confidence**: Should be 100% (system correctly identifies the candidate)
+- **Flags**: May show 0 flags (real detectors need model downloads)
+- **Latency**: Should be < 100ms per frame
+
+## Pipeline Status
+
+✅ **Architecture**: Complete and functional
+✅ **Identity Resolution**: Working (Bayesian fusion)
+✅ **Stream Gating**: Working (only candidate frames analyzed)
+✅ **Video Processing**: Working (real videos processed)
+️ **Deepfake Detection**: Heuristic only (insightface model needs download)
+️ **Gaze Detection**: Heuristic only (MediaPipe API changed in v0.10+)
+✅ **Voice Liveness**: Working (resemblyzer embeddings active)
+
+## Next Steps
+
+To enable full pipeline functionality:
+1. Download insightface models (requires internet)
+2. Update MediaPipe integration for v0.10+ API
+3. Add more test videos with different scenarios
+
