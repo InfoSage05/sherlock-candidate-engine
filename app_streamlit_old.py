@@ -1147,11 +1147,33 @@ def render_live_panel():
                 key="live_yt_url",
             )
         elif input_mode == "Local file":
-            file_path = st.text_input(
-                "File path",
-                placeholder="/path/to/video.mp4",
-                key="live_file_path",
+            source_mode = st.radio(
+                "Source",
+                ["Upload file", "Enter path"],
+                horizontal=True,
+                key="live_source_mode",
+                label_visibility="collapsed",
             )
+            if source_mode == "Upload file":
+                uploaded_file = st.file_uploader(
+                    "Choose a video file",
+                    type=["mp4", "avi", "mov", "mkv", "webm", "wav"],
+                    key="live_uploader",
+                )
+                if uploaded_file:
+                    upload_dir = Path("/tmp/opencode/uploads")
+                    upload_dir.mkdir(parents=True, exist_ok=True)
+                    dest = upload_dir / uploaded_file.name
+                    with open(dest, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    file_path = str(dest)
+                    st.success(f"Uploaded `{uploaded_file.name}` ({uploaded_file.size / 1e6:.1f} MB)")
+            else:
+                file_path = st.text_input(
+                    "File path",
+                    placeholder="/path/to/video.mp4",
+                    key="live_file_path",
+                )
 
         cand_name = st.text_input("Candidate name", value="Candidate", key="live_cand")
 

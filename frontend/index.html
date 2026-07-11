@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sherlock — Real-time Bayesian candidate identification & authenticity tracking for live interviews">
+    <title>Sherlock — Candidate Identification Engine</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
+</head>
+<body>
+<div id="app">
+
+    <!-- ═══ Header ═══ -->
+    <header class="app-header">
+        <span class="app-header__logo">🔍</span>
+        <div>
+            <h1 class="app-header__title">Sherlock</h1>
+            <div class="app-header__subtitle">Real-time Bayesian fusion for interview candidate identification</div>
+        </div>
+    </header>
+
+    <!-- ═══ Top Bar ═══ -->
+    <div class="top-bar" id="topBar">
+        <div class="top-bar__scenario">
+            <select id="scenarioSelect">
+                <option value="">— Select Scenario —</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" id="loadBtn" style="display:none;">Load</button>
+
+        <div class="top-bar__status" id="statusDisplay" style="display:none;">
+            <div class="top-bar__status-label">Status</div>
+            <div class="top-bar__status-value" id="statusValue">—</div>
+        </div>
+
+        <div class="top-bar__controls" id="playbackControls" style="display:none;">
+            <button class="btn btn-primary btn-icon" id="playBtn" title="Play">▶</button>
+            <button class="btn btn-ghost btn-icon" id="stepBtn" title="Step Forward">⏭</button>
+            <button class="btn btn-ghost btn-icon" id="resetBtn" title="Reset">↺</button>
+            <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="4" step="0.5" value="1" title="Speed">
+            <span class="text-xs color-muted font-mono" id="speedLabel">1×</span>
+        </div>
+
+        <div class="top-bar__progress" id="progressDisplay" style="display:none;">
+            <div class="top-bar__progress-label">Progress</div>
+            <div class="top-bar__progress-value" id="progressValue">0%</div>
+        </div>
+    </div>
+
+    <!-- ═══ Alert Banner ═══ -->
+    <div class="alert-banner alert-banner--hidden" id="alertBanner">
+        <span>🚨</span>
+        <span id="alertText"></span>
+    </div>
+
+    <!-- ═══ Landing Page ═══ -->
+    <div id="landingPage" class="landing">
+        <div class="hero">
+            <h1>🔍 Sherlock</h1>
+            <p>Real-time Bayesian candidate identification &amp; authenticity tracking for live interviews.
+               Fuses many weak signals and explains every decision.</p>
+        </div>
+
+        <h2 class="section-title">What Sherlock answers</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-card__icon">🎯</span>
+                <h4>WHO is the candidate?</h4>
+                <p>Live belief distribution over every participant — survives nicknames, device names, and mid-call name changes.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-card__icon">🛡️</span>
+                <h4>HOW authentic?</h4>
+                <p>Separate authenticity stream flags reading, paste bursts, and assisted-work signatures without contaminating identity.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">How it works</h2>
+        <div class="feature-grid">
+            <div class="feature-card"><span class="feature-card__icon">📡</span><h4>Ingestion</h4><p>Per-participant audio, calendar events, and transcripts.</p></div>
+            <div class="feature-card"><span class="feature-card__icon">🧩</span><h4>Signal Extractors</h4><p>14 independent weak signals emit evidence packets.</p></div>
+            <div class="feature-card"><span class="feature-card__icon">📊</span><h4>Fusion Engine</h4><p>Bayesian log-odds tracker updates beliefs per participant.</p></div>
+            <div class="feature-card"><span class="feature-card__icon">🧾</span><h4>Explanation</h4><p>Every number traces back to an ordered evidence ledger.</p></div>
+            <div class="feature-card"><span class="feature-card__icon">👤</span><h4>Feedback</h4><p>Interviewer confirm/correct recalibrates signal weights.</p></div>
+        </div>
+
+        <h2 class="section-title">Try a scenario</h2>
+        <p class="text-sm color-muted mb-md">Pick an edge-case scenario to watch Sherlock identify the candidate in real time.</p>
+        <div class="scenario-grid" id="scenarioGrid"></div>
+    </div>
+
+    <!-- ═══ Dashboard (hidden until scenario loaded) ═══ -->
+    <div id="dashboardPage" class="hidden">
+
+        <!-- Scoreboard -->
+        <div class="card mb-md">
+            <div class="card__header">
+                <span class="card__header-icon">📊</span> Live Scoreboard
+            </div>
+            <div class="scoreboard" id="scoreboard"></div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabNav">
+            <div class="tab active" data-tab="monitor">📊 Monitor</div>
+            <div class="tab" data-tab="flags">🚨 Flags & Alerts</div>
+            <div class="tab" data-tab="evidence">📜 Evidence Room</div>
+            <div class="tab" data-tab="timeline">⏱ Timeline</div>
+            <div class="tab" data-tab="candidate">🎯 Candidate Info</div>
+        </div>
+
+        <!-- ── Monitor Tab ── -->
+        <div class="tab-panel active" id="panel-monitor">
+            <div class="monitor-grid">
+                <!-- Belief Bars -->
+                <div class="card">
+                    <div class="card__header"><span class="card__header-icon">📊</span> Belief Distribution</div>
+                    <div class="belief-bars" id="beliefBars"></div>
+                </div>
+
+                <!-- Gauges -->
+                <div>
+                    <div class="card">
+                        <div class="card__header"><span class="card__header-icon">🔐</span> Identity Confidence</div>
+                        <div class="gauge-container" id="identityGauge"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card__header"><span class="card__header-icon">🛡️</span> Authenticity (Current Speaker)</div>
+                        <div class="gauge-container" id="authenticityGauge"></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Event Feed -->
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">📡</span> Live Event Feed</div>
+                <div class="event-feed" id="eventFeed"></div>
+            </div>
+        </div>
+
+        <!-- ── Flags Tab ── -->
+        <div class="tab-panel" id="panel-flags">
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">🚨</span> Active Flags & Alerts</div>
+                <div id="flagsList"></div>
+            </div>
+        </div>
+
+        <!-- ── Evidence Room Tab ── -->
+        <div class="tab-panel" id="panel-evidence">
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">📜</span> Evidence Room</div>
+
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label>Category</label>
+                        <select id="evCatFilter">
+                            <option value="">All Categories</option>
+                            <option value="Identity Priors">Identity Priors</option>
+                            <option value="Behavioral">Behavioral</option>
+                            <option value="Semantic LLM">Semantic LLM</option>
+                            <option value="Authenticity">Authenticity</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Participant</label>
+                        <select id="evParticipantFilter">
+                            <option value="">All Participants</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search Rationale</label>
+                        <input type="text" id="evSearchInput" placeholder="Type to search...">
+                    </div>
+                    <button class="btn btn-ghost" id="exportEvidenceBtn">📥 Export JSON</button>
+                </div>
+
+                <div class="evidence-count" id="evidenceCount"></div>
+                <div class="evidence-list" id="evidenceList"></div>
+            </div>
+        </div>
+
+        <!-- ── Timeline Tab ── -->
+        <div class="tab-panel" id="panel-timeline">
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">⏱</span> Timeline</div>
+                <input type="range" class="timeline-scrubber" id="timelineScrubber" min="0" max="100" step="0.5" value="0">
+                <div class="timeline-time-display">
+                    <span id="timelineCurrent">0s</span>
+                    <span id="timelineTotal">0s</span>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">💬</span> Transcript</div>
+                <div class="transcript-container" id="transcriptContainer"></div>
+            </div>
+        </div>
+
+        <!-- ── Candidate Info Tab ── -->
+        <div class="tab-panel" id="panel-candidate">
+            <div class="card">
+                <div class="card__header"><span class="card__header-icon">🎯</span> Candidate Intelligence</div>
+
+                <div class="candidate-select">
+                    <label class="text-xs color-muted" style="display:block;margin-bottom:0.25rem;">SELECT PARTICIPANT</label>
+                    <select id="candidateSelect" style="min-width:200px;"></select>
+                </div>
+
+                <!-- Metrics -->
+                <div class="metrics-row" id="candidateMetrics"></div>
+
+                <!-- Profile -->
+                <div class="card" id="candidateProfile" style="display:none;">
+                    <div class="card__header"><span class="card__header-icon">👤</span> Profile</div>
+                    <div class="profile-card" id="profileFields"></div>
+                </div>
+
+                <!-- Evidence -->
+                <div class="card mt-md">
+                    <div class="card__header"><span class="card__header-icon">📋</span> All Evidence</div>
+                    <div class="evidence-list" id="candidateEvidence"></div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card mt-md" id="candidateChartCard" style="display:none;">
+                    <div class="card__header"><span class="card__header-icon">📈</span> Confidence Over Time</div>
+                    <div class="chart-container">
+                        <canvas id="candidateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Bottom Bar (Feedback) ═══ -->
+        <div class="bottom-bar" id="bottomBar">
+            <div class="bottom-bar__title">👤 Interviewer Feedback & Actions</div>
+            <hr class="divider" style="margin:0.5rem 0;">
+
+            <div class="feedback-grid">
+                <div class="feedback-group">
+                    <button class="btn btn-success" id="confirmBtn" style="width:100%;">✅ Confirm Candidate</button>
+                </div>
+                <div class="feedback-group">
+                    <label>Correct to</label>
+                    <select id="correctionSelect"></select>
+                    <button class="btn btn-primary" id="correctBtn" style="width:100%;">🔧 Apply Correction</button>
+                </div>
+                <div class="feedback-group">
+                    <label>Operator note</label>
+                    <input type="text" id="noteInput" placeholder="Why this correction?">
+                    <button class="btn btn-primary" id="saveNoteBtn" style="width:100%;">📝 Save Note</button>
+                </div>
+                <div class="feedback-group">
+                    <button class="btn btn-ghost" id="exportReportBtn" style="width:100%;">📄 Export Full Report</button>
+                </div>
+            </div>
+
+            <div class="operator-notes" id="operatorNotes" style="display:none;">
+                <div class="text-xs color-muted mb-sm" style="text-transform:uppercase;">Operator Notes</div>
+                <div id="notesContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
