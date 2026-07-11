@@ -10,15 +10,12 @@ production models.
 
 from __future__ import annotations
 
-import logging
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
 from ..models import CandidateMediaFrame, SignalSource
 from .base import BaseAuthenticityPipeline
-
-logger = logging.getLogger(__name__)
 
 
 class DeepfakeDetector:
@@ -50,6 +47,15 @@ class HeuristicDeepfakeDetector(DeepfakeDetector):
         return score, {"texture_variance": texture}
 
 
+def _default_detector() -> DeepfakeDetector:
+    try:
+        from .real_detectors import RealDeepfakeDetector
+
+        return RealDeepfakeDetector()
+    except Exception:
+        return HeuristicDeepfakeDetector()
+
+
 class DeepfakeVideoPipeline(BaseAuthenticityPipeline):
     source = SignalSource.DEEPFAKE_VIDEO
 
@@ -57,7 +63,7 @@ class DeepfakeVideoPipeline(BaseAuthenticityPipeline):
                  confidence_threshold: float = 0.65):
         super().__init__(
             context=context,
-            detector=detector or HeuristicDeepfakeDetector(),
+            detector=detector or _default_detector(),
             confidence_threshold=confidence_threshold,
         )
 

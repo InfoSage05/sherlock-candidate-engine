@@ -15,14 +15,12 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from typing import List, Optional
 
 import numpy as np
 
 from ..models import RawMediaFrame, TranscriptSegment
-from .base import BaseAuthenticityPipeline  # only for shared helpers if needed
-
-logger = logging.getLogger(__name__)
 
 
 class Transcriber:
@@ -87,7 +85,7 @@ class LiveTranscriptionPipeline:
         text = self.transcriber.transcribe(combined)
         if not text:
             return None
-        now = __import__("datetime").datetime.utcnow()
+        now = datetime.utcnow()
         seg = TranscriptSegment(
             participant_id=frame.participant_id,
             text=text,

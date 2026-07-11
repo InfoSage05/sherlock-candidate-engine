@@ -21,7 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from .fusion import FusionEngine
 from .gate import CandidateStreamGate
@@ -118,8 +118,6 @@ class RealtimeInferenceOrchestrator:
         try:
             while self._running:
                 frame = await self._candidate_queue.get()
-                if frame is None:
-                    continue
                 if self._is_stale(frame):
                     self.dropped_stale += 1
                     continue

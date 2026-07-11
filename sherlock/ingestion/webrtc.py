@@ -86,8 +86,6 @@ class WebRTCSource(MediaSource):
         logger.info("WebRTCSource stopped.")
 
     async def _stream(self) -> AsyncIterator[RawMediaFrame]:
-        import av
-
         while self._running:
             for receiver in list(self._receivers.values()):
                 try:
@@ -95,9 +93,7 @@ class WebRTCSource(MediaSource):
                 except asyncio.TimeoutError:
                     continue
                 if receiver.kind == "video":
-                    img = av.video.frame.VideoFrame.from_ndarray(
-                        frame.to_ndarray(format="rgb24")
-                    )
+                    img = frame.to_ndarray(format="rgb24")
                     yield RawMediaFrame(
                         participant_id=receiver.participant_id,
                         video_frame=img,

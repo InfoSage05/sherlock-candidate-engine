@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import math
+from datetime import datetime
 from typing import List, Optional
 
 from ..models import (
@@ -20,8 +21,6 @@ from ..models import (
     SignalAxis,
     SignalSource,
 )
-
-logger = logging.getLogger(__name__)
 
 MIN_CONFIDENCE = 0.5
 MAX_CONFIDENCE = 0.98
@@ -77,7 +76,7 @@ class BaseAuthenticityPipeline:
             delta_log_odds=delta,
             confidence=confidence,
             rationale=rationale,
-            timestamp=__import__("datetime").datetime.utcnow(),
+            timestamp=datetime.utcnow(),
             severity=severity,
             flag_type=self.source.value,
             recommendation=recommendation,

@@ -10,17 +10,14 @@ real ``GazeDetector`` for production use.
 
 from __future__ import annotations
 
-import logging
 from collections import deque
-from typing import Deque, Optional, Tuple
+from datetime import datetime
+from typing import Deque, Optional
 
 import numpy as np
 
 from ..models import CandidateMediaFrame, GazeEvent, MeetingContext
 from ..signals.authenticity import AuthenticitySignalExtractor
-from .base import BaseAuthenticityPipeline
-
-logger = logging.getLogger(__name__)
 
 
 class GazeDetector:
@@ -50,13 +47,20 @@ class HeuristicGazeDetector(GazeDetector):
         return (cx, cy), off, None
 
 
-class GazeBehavioralPipeline(BaseAuthenticityPipeline):
-    source = None  # evidence is produced via AuthenticitySignalExtractor
+def _default_detector() -> GazeDetector:
+    try:
+        from .real_detectors import RealGazeDetector
 
+        return RealGazeDetector()
+    except Exception:
+        return HeuristicGazeDetector()
+
+
+class GazeBehavioralPipeline:
     def __init__(self, context: MeetingContext, detector: Optional[GazeDetector] = None,
                  window: int = 30):
         self.context = context
-        self.detector = detector or HeuristicGazeDetector()
+        self.detector = detector or _default_detector()
         self._window: Deque[GazeEvent] = deque(maxlen=window)
 
     def process(self, frame: CandidateMediaFrame):
@@ -66,7 +70,7 @@ class GazeBehavioralPipeline(BaseAuthenticityPipeline):
         gaze_vec, off, periodicity = self.detector.detect(img)
         self._window.append(GazeEvent(
             participant_id=frame.candidate_id,
-            timestamp=__import__("datetime").datetime.utcnow(),
+            timestamp=datetime.utcnow(),
             gaze_vector=tuple(gaze_vec),
             is_off_screen=off,
             saccade_periodicity=periodicity,

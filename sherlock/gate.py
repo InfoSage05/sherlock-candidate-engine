@@ -10,7 +10,8 @@ mid-call.
 from __future__ import annotations
 
 import logging
-from typing import Callable, List, Optional
+from datetime import datetime
+from typing import List, Optional
 
 from .models import (
     CandidateMediaFrame,
@@ -34,7 +35,6 @@ class CandidateStreamGate:
         self.engine = engine
         self.ambiguity_threshold = ambiguity_threshold
         self.candidate_id: Optional[str] = None
-        self._last_status: Optional[str] = None
         self._uncertainty_flagged = False
         self._pending_flags: List[EvidencePacket] = []
         self.dropped_frames_non_candidate: int = 0
@@ -55,7 +55,7 @@ class CandidateStreamGate:
                 delta_log_odds=0.0,
                 confidence=1.0,
                 rationale=rationale,
-                timestamp=__import__("datetime").datetime.utcnow(),
+                timestamp=datetime.utcnow(),
                 severity=severity,
                 flag_type=source.value,
                 recommendation=recommendation,

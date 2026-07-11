@@ -10,7 +10,6 @@ real ``VoiceLivenessDetector`` for production use.
 
 from __future__ import annotations
 
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -18,8 +17,6 @@ import numpy as np
 from ..models import CandidateMediaFrame, SignalSource
 from .base import BaseAuthenticityPipeline
 from .speaker_store import SpeakerStore
-
-logger = logging.getLogger(__name__)
 
 
 class VoiceLivenessDetector:
@@ -40,6 +37,15 @@ class HeuristicVoiceLivenessDetector(VoiceLivenessDetector):
         return score, {"peak": peak, "clip_ratio": clip_ratio}
 
 
+def _default_detector() -> VoiceLivenessDetector:
+    try:
+        from .real_detectors import RealVoiceLivenessDetector
+
+        return RealVoiceLivenessDetector()
+    except Exception:
+        return HeuristicVoiceLivenessDetector()
+
+
 class VoiceLivenessPipeline(BaseAuthenticityPipeline):
     source = SignalSource.VOICE_LIVENESS
 
@@ -48,7 +54,7 @@ class VoiceLivenessPipeline(BaseAuthenticityPipeline):
                  confidence_threshold: float = 0.65):
         super().__init__(
             context=context,
-            detector=detector or HeuristicVoiceLivenessDetector(),
+            detector=detector or _default_detector(),
             confidence_threshold=confidence_threshold,
         )
         self.speaker_store = speaker_store or SpeakerStore()
@@ -86,8 +92,14 @@ class VoiceLivenessPipeline(BaseAuthenticityPipeline):
 
     @staticmethod
     def _embedding(pcm: np.ndarray) -> Optional[np.ndarray]:
-        # Placeholder embedding: MFCC-free energy contour summary. Replace with
-        # a real speaker-embedding model (resemblyzer/speechbrain) in prod.
+        try:
+            from .real_detectors import resemblyzer_embedding
+
+            return resemblyzer_embedding(pcm)
+        except Exception:
+            pass
+        # Fallback: energy-contour summary (no speaker discrimination, just for
+        # testing the pipeline wiring).
         if pcm.size < 1600:
             return None
         win = pcm.reshape(-1, 1600)

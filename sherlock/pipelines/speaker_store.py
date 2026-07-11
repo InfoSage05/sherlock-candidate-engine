@@ -7,12 +7,9 @@ for swapped/synthesized speakers). Pure-numpy, no external dependencies.
 
 from __future__ import annotations
 
-import logging
 from typing import Dict, List, Optional
 
 import numpy as np
-
-logger = logging.getLogger(__name__)
 
 
 class SpeakerStore:

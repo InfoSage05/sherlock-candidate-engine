@@ -33,19 +33,18 @@ async def test_filesource_rejects_missing_file():
         pass
 
 
-async def test_webrtc_source_importable_but_requires_aiortc():
+async def test_webrtc_source_start_stop():
     src = WebRTCSource(signaling_url="ws://x", room="r")
     assert hasattr(src, "start")
-    # aiortc is not installed in this environment.
-    try:
-        await src.start()
-        raise AssertionError("expected RuntimeError")
-    except RuntimeError:
-        pass
+    # aiortc is now installed; start/stop should work cleanly.
+    await src.start()
+    assert src.running
+    await src.stop()
+    assert not src.running
 
 
 if __name__ == "__main__":
     asyncio.run(test_filesource_synthetic_yields_frames())
     asyncio.run(test_filesource_rejects_missing_file())
-    asyncio.run(test_webrtc_source_importable_but_requires_aiortc())
+    asyncio.run(test_webrtc_source_start_stop())
     print("All ingestion tests passed!")
