@@ -337,7 +337,7 @@ def render_top_bar():
         fixture_options = {f["name"]: f for f in available_fixtures}
         selected_name = st.selectbox("Scenario", options=list(fixture_options.keys()), index=0)
         if selected_name:
-            if st.session_state.replay is None or st.button("Load Scenario", use_container_width=True):
+            if st.session_state.replay is None or st.button("Load Scenario", width='stretch'):
                 load_scenario(fixture_options[selected_name]["path"])
 
     with col2:
@@ -355,12 +355,12 @@ def render_top_bar():
 
     with col3:
         if st.session_state.replay:
-            if st.button("▶ Run" if not st.session_state.is_playing else "⏸ Pause", use_container_width=True):
+            if st.button("▶ Run" if not st.session_state.is_playing else "⏸ Pause", width='stretch'):
                 st.session_state.is_playing = not st.session_state.is_playing
 
     with col4:
         if st.session_state.replay:
-            if st.button("↺ Reset", use_container_width=True):
+            if st.button("↺ Reset", width='stretch'):
                 st.session_state.replay.reset()
                 st.session_state.current_snapshot = None
                 st.session_state.is_playing = False
@@ -527,7 +527,7 @@ def render_belief_bars():
                       margin=dict(l=10, r=10, t=10, b=10), plot_bgcolor="rgba(0,0,0,0)",
                       paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e8eaf6"),
                       xaxis=dict(gridcolor="#2a2f4f"), yaxis=dict(gridcolor="#2a2f4f"))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_confidence_gauge():
@@ -553,7 +553,7 @@ def render_confidence_gauge():
                                          'bar': {'color': "#66bb6a"}, 'bgcolor': "#1e2340",
                                          'bordercolor': "#2a2f4f"}))
     fig.update_layout(height=220, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     if snap.top_candidate_id:
         p = st.session_state.replay.fixture.meeting_context.participants.get(snap.top_candidate_id)
@@ -575,7 +575,7 @@ def render_authenticity_gauge():
                                              'bar': {'color': "#ffa726"}, 'bgcolor': "#1e2340",
                                              'bordercolor': "#2a2f4f"}))
         fig.update_layout(height=180, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         auth_pct = auth_prob * 100
         if auth_pct < 30:
             st.error("⚠ Low authenticity — candidate may be assisted")
@@ -713,7 +713,7 @@ def render_evidence_room():
             """, unsafe_allow_html=True)
 
     st.markdown("---")
-    if st.button("📥 Export Evidence as JSON", use_container_width=True):
+    if st.button("📥 Export Evidence as JSON", width='stretch'):
         ledger_data = [{
             "source": ep.source.value, "axis": ep.axis.value,
             "target_participant_id": ep.target_participant_id,
@@ -865,7 +865,7 @@ def render_candidate_intelligence():
                           plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
                           font=dict(color="#e8eaf6"), xaxis=dict(gridcolor="#2a2f4f", showticklabels=False),
                           yaxis=dict(gridcolor="#2a2f4f", title="Probability %"))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -915,7 +915,7 @@ def render_landing_page():
             with cols[j]:
                 global_idx = i + j + 1
                 st.markdown(f'<div class="scenario-card"><span class="num">{global_idx}</span><h4>{fx["name"]}</h4><p style="color:var(--text-secondary);font-size:0.82rem;">{fx["description"]}</p></div>', unsafe_allow_html=True)
-                if st.button(f"▶  Open", key=f"landing_{fx['id']}", use_container_width=True):
+                if st.button(f"▶  Open", key=f"landing_{fx['id']}", width='stretch'):
                     load_scenario(fx["path"])
 
 
@@ -1017,7 +1017,7 @@ def render_bottom_bar():
     col1, col2, col3, col4 = st.columns([1.5, 1.5, 1.5, 1])
 
     with col1:
-        if st.button("✅ Confirm Candidate", use_container_width=True):
+        if st.button("✅ Confirm Candidate", width='stretch'):
             if snap.top_candidate_id and st.session_state.feedback_loop:
                 st.session_state.feedback_loop.record_confirmation(
                     snap.top_candidate_id, notes="Interviewer confirmed via UI")
@@ -1030,14 +1030,14 @@ def render_bottom_bar():
             p = st.session_state.replay.fixture.meeting_context.participants.get(pid)
             pnames.append(p.display_name if p else pid)
         selected_pid = st.selectbox("Correct to", options=participant_options, format_func=lambda x: pnames[participant_options.index(x)], key="correction_select")
-        if st.button("🔧 Apply Correction", use_container_width=True):
+        if st.button("🔧 Apply Correction", width='stretch'):
             if selected_pid and st.session_state.feedback_loop:
                 st.session_state.feedback_loop.record_correction(selected_pid, notes="Interviewer corrected via UI")
                 st.session_state.feedback_applied = True
 
     with col3:
         note_text = st.text_input("✏ Operator note", key="op_note_input", placeholder="Why this correction?")
-        if st.button("📝 Save Note", use_container_width=True):
+        if st.button("📝 Save Note", width='stretch'):
             if note_text:
                 st.session_state.operator_notes.append({
                     "text": note_text, "timestamp": datetime.utcnow().isoformat(),
@@ -1055,7 +1055,7 @@ def render_bottom_bar():
     st.markdown("---")
     exp_col1, exp_col2 = st.columns([1, 4])
     with exp_col1:
-        if st.button("📄 Export Full Report", use_container_width=True):
+        if st.button("📄 Export Full Report", width='stretch'):
             report_html = generate_full_report()
             st.download_button("💾 Download HTML Report", data=report_html,
                                file_name=f"sherlock_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
@@ -1176,23 +1176,23 @@ def main():
         with col_right:
             st.markdown('<div class="panel-card"><h3>🔐 Identity Confidence</h3>', unsafe_allow_html=True)
             render_confidence_gauge()
-            st.markdown('</div>')
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown('<div class="panel-card"><h3>🔐 Authenticity (Current Speaker)</h3>', unsafe_allow_html=True)
             render_authenticity_gauge()
-            st.markdown('</div>')
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<hr class="dash-divider">', unsafe_allow_html=True)
-        st.markdown('<div class="dash-divider" style="margin:0.25rem 0;"></div>')
+        st.markdown('<div class="dash-divider" style="margin:0.25rem 0;"></div>', unsafe_allow_html=True)
 
         # Event feed in a panel
         st.markdown('<div class="panel-card"><h3>📡 Live Event Feed</h3>', unsafe_allow_html=True)
         render_event_feed(30)
-        st.markdown('</div>')
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tabs[1]:
         st.markdown('<div class="panel-card"><h3>🚨 Active Flags & Alerts</h3>', unsafe_allow_html=True)
         render_flags()
-        st.markdown('</div>')
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tabs[2]:
         render_evidence_room()

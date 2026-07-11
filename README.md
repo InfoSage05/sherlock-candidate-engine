@@ -97,29 +97,29 @@ graph TD
 ### Component Overview
 ```
 ┌────────────────────┐
-│   Ingestion Layer    │  Meet/Zoom/Teams events, calendar API, per-participant
-│                      │  audio/video streams, speaker-attributed transcript
+│   Ingestion Layer  │  Meet/Zoom/Teams events, calendar API, per-participant
+│                    │  audio/video streams, speaker-attributed transcript
+└─────────┬──────────┘
+          │
+┌─────────▼────────────┐
+│  Signal Extractors   │  Independent, parallel micro-services. Each emits
+│  (signals/)          │  evidence packets: {source, target, delta_log_odds,
+│                      │  confidence, rationale, timestamp}
 └─────────┬────────────┘
           │
 ┌─────────▼────────────┐
-│  Signal Extractors    │  Independent, parallel micro-services. Each emits
-│  (signals/)           │  evidence packets: {source, target, delta_log_odds,
-│                       │  confidence, rationale, timestamp}
+│   Fusion Engine      │  Bayesian belief tracker. Maintains log-odds per
+│   (fusion.py)        │  participant for identity and authenticity axes.
 └─────────┬────────────┘
           │
 ┌─────────▼────────────┐
-│   Fusion Engine       │  Bayesian belief tracker. Maintains log-odds per
-│   (fusion.py)         │  participant for identity and authenticity axes.
+│  Explanation Layer   │  Turns the evidence ledger into plain-English
+│  (explanation.py)    │  rationale. Every confidence number is traceable.
 └─────────┬────────────┘
           │
 ┌─────────▼────────────┐
-│  Explanation Layer    │  Turns the evidence ledger into plain-English
-│  (explanation.py)     │  rationale. Every confidence number is traceable.
-└─────────┬────────────┘
-          │
-┌─────────▼────────────┐
-│   Feedback Loop       │  Interviewer confirms/corrects → recalibrates
-│   (feedback.py)       │  per-signal weights over time.
+│   Feedback Loop      │  Interviewer confirms/corrects → recalibrates
+│   (feedback.py)      │  per-signal weights over time.
 └──────────────────────┘
 ```
 
@@ -301,7 +301,3 @@ When recording your demo video, cover these points:
 ## License
 
 MIT
-
-## Contact
-
-For questions about this implementation, see the original challenge document or contact priya@sherlock.sh.
