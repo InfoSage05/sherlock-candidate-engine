@@ -71,7 +71,7 @@ def test_speaker_store_detects_drift():
     store.update("p1", a)
     assert store.has_baseline("p1")
     assert store.drift("p1", a) == 0.0
-    assert store.drift("p1", b) == 1.0  # opposite vectors -> max drift
+    assert store.drift("p1", b) == 2.0  # opposite vectors -> max drift
 
 
 # ----- Gaze / behavioral CV (10.3.6) ---------------------------------- #

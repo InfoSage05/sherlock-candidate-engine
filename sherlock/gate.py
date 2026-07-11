@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Callable, List, Optional
 
-from ..models import (
+from .models import (
     CandidateMediaFrame,
     EvidencePacket,
     FlagSeverity,
@@ -20,7 +20,7 @@ from ..models import (
     SignalAxis,
     SignalSource,
 )
-from ..fusion import FusionEngine
+from .fusion import FusionEngine
 
 logger = logging.getLogger(__name__)
 

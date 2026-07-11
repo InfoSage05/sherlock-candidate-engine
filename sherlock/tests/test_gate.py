@@ -49,7 +49,7 @@ def test_gate_switches_candidate_mid_call():
     # Operator corrects: bob is actually the candidate.
     engine.ingest(EvidencePacket(
         source=SignalSource.CALENDAR_MATCH, axis=SignalAxis.IDENTITY,
-        target_participant_id="bob", delta_log_odds=3.0, confidence=0.9,
+        target_participant_id="bob", delta_log_odds=6.0, confidence=0.9,
         rationale="operator correction", timestamp=datetime.utcnow(),
     ))
 

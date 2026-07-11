@@ -23,15 +23,15 @@ import logging
 import time
 from typing import Dict, List, Optional
 
-from ..fusion import FusionEngine
-from ..gate import CandidateStreamGate
-from ..ingestion.base import MediaSource
-from ..models import EvidencePacket, RawMediaFrame
-from ..signals.behavioral import BehavioralSignalExtractor
-from .deepfake import DeepfakeVideoPipeline
-from .gaze_cv import GazeBehavioralPipeline
-from .transcription_live import LiveTranscriptionPipeline
-from .voice_liveness import VoiceLivenessPipeline
+from .fusion import FusionEngine
+from .gate import CandidateStreamGate
+from .ingestion.base import MediaSource
+from .models import EvidencePacket, RawMediaFrame
+from .signals.behavioral import BehavioralSignalExtractor
+from .pipelines.deepfake import DeepfakeVideoPipeline
+from .pipelines.gaze_cv import GazeBehavioralPipeline
+from .pipelines.transcription_live import LiveTranscriptionPipeline
+from .pipelines.voice_liveness import VoiceLivenessPipeline
 
 logger = logging.getLogger(__name__)
 
