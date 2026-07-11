@@ -195,16 +195,24 @@ class HeuristicAudioAuthenticityDetector(AudioAuthenticityDetector):
 
 
 def _default_detector() -> AudioAuthenticityDetector:
-    """Try open-source model first, fall back to heuristic."""
-    try:
-        return SpeechBrainAntiSpoofingDetector()
-    except Exception as exc:
-        logger.info(
-            "Open-source SpeechBrain anti-spoofing model not available (%s); "
-            "falling back to heuristic audio authenticity detector.",
-            exc,
-        )
-        return HeuristicAudioAuthenticityDetector()
+    """Return the best available detector.
+
+    By default the heuristic detector is used because it is fast enough for
+    real-time dashboards.  Set ``SHERLOCK_USE_SPEECHBRAIN=1`` to additionally
+    try the SpeechBrain AASIST open-source anti-spoofing model.
+    """
+    import os
+
+    if os.environ.get("SHERLOCK_USE_SPEECHBRAIN") == "1":
+        try:
+            return SpeechBrainAntiSpoofingDetector()
+        except Exception as exc:
+            logger.info(
+                "Open-source SpeechBrain anti-spoofing model not available (%s); "
+                "falling back to heuristic audio authenticity detector.",
+                exc,
+            )
+    return HeuristicAudioAuthenticityDetector()
 
 
 class AudioAuthenticityPipeline:
@@ -220,10 +228,16 @@ class AudioAuthenticityPipeline:
         confidence_threshold: float = 0.55,
     ) -> None:
         self.context = context
-        self.detector = detector or _default_detector()
+        self._detector: Optional[AudioAuthenticityDetector] = detector
         self.window_duration_seconds = window_duration_seconds
         self.confidence_threshold = confidence_threshold
         self._buffers: Dict[str, List[np.ndarray]] = {}
+
+    @property
+    def detector(self) -> AudioAuthenticityDetector:
+        if self._detector is None:
+            self._detector = _default_detector()
+        return self._detector
 
     def process(self, frame: CandidateMediaFrame) -> Optional[List[EvidencePacket]]:
         if frame.audio_chunk is None:

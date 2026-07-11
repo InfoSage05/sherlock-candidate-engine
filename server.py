@@ -131,9 +131,17 @@ def serialize_live_snapshot(sess) -> Dict:
     identity_prob = belief.identity_probability if belief else top_prob
     auth_prob = belief.authenticity_probability if belief else 0.5
 
+    # LiveSession stores context on the engine, not directly on itself.
+    ctx = getattr(sess.engine, "context", None)
+    candidate_name = (
+        status.get("video_title")
+        or (ctx.candidate_name if ctx else None)
+        or "Candidate"
+    )
+
     participant = {
         "id": top_id,
-        "name": status.get("video_title") or sess.context.candidate_name or "Candidate",
+        "name": candidate_name,
         "identity_probability": round(identity_prob, 4),
         "authenticity_probability": round(auth_prob, 4),
         "identity_log_odds": round(belief.identity_log_odds, 3) if belief else 0.0,

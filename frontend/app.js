@@ -30,6 +30,8 @@ const appState = {
     liveRunning:    false,
     liveWs:         null,
     liveVideoUrl:   null,
+    liveReconnectAttempts: 0,
+    maxLiveReconnectAttempts: 10,
 };
 
 // ============================================================================
@@ -199,6 +201,9 @@ async function startLive() {
 
     let body = { candidate_name: candidateName };
 
+    const startBtn = $('#liveStartBtn');
+    setLiveLoading(true);
+
     try {
         if (file) {
             const form = new FormData();
@@ -227,6 +232,7 @@ async function startLive() {
         appState.liveMode = true;
         appState.liveRunning = true;
         appState.liveVideoUrl = startRes.video_url;
+        appState.liveReconnectAttempts = 0;
 
         showDashboard();
         setupLiveVideo(startRes.video_url, startRes.video_title);
@@ -237,7 +243,16 @@ async function startLive() {
     } catch (e) {
         console.error('Failed to start live analysis:', e);
         showToast('Error: ' + e.message, true);
+    } finally {
+        setLiveLoading(false);
     }
+}
+
+function setLiveLoading(loading) {
+    const btn = $('#liveStartBtn');
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.textContent = loading ? '⏳ Starting…' : '▶ Start Analysis';
 }
 
 async function stopLive() {
@@ -262,8 +277,11 @@ async function stopLive() {
     appState.liveMode = false;
     appState.liveRunning = false;
     appState.liveVideoUrl = null;
+    appState.liveReconnectAttempts = 0;
 
     updateLiveStatusRow(false);
+    setLiveConnectionStatus(false, 'idle');
+    setLiveLoading(false);
     showLanding();
     showToast('Live analysis stopped');
 }
@@ -289,10 +307,21 @@ function connectLiveWS() {
         appState.liveWs = null;
     }
 
+    if (appState.liveReconnectAttempts >= appState.maxLiveReconnectAttempts) {
+        showToast('Lost connection to analysis backend. Please refresh.', true);
+        setLiveConnectionStatus(false, 'disconnected');
+        return;
+    }
+
     const ws = new WebSocket(`${WS_BASE}/ws/live`);
     appState.liveWs = ws;
+    appState.liveReconnectAttempts += 1;
 
-    ws.onopen = () => console.log('Live WS connected');
+    ws.onopen = () => {
+        console.log('Live WS connected');
+        appState.liveReconnectAttempts = 0;
+        setLiveConnectionStatus(true, 'live');
+    };
 
     ws.onmessage = (event) => {
         try {
@@ -309,12 +338,36 @@ function connectLiveWS() {
     ws.onclose = () => {
         console.log('Live WS disconnected');
         appState.liveWs = null;
+        setLiveConnectionStatus(false, appState.liveRunning ? 'reconnecting' : 'idle');
         if (appState.liveRunning) {
-            setTimeout(connectLiveWS, 2000);
+            const delay = Math.min(10000, 2000 + appState.liveReconnectAttempts * 1000);
+            setTimeout(connectLiveWS, delay);
         }
     };
 
-    ws.onerror = (e) => console.error('Live WS error:', e);
+    ws.onerror = (e) => {
+        console.error('Live WS error:', e);
+        setLiveConnectionStatus(false, 'error');
+    };
+}
+
+function setLiveConnectionStatus(connected, state) {
+    const badge = $('#liveConnectionBadge');
+    if (!badge) return;
+    badge.style.display = 'inline-flex';
+    if (connected) {
+        badge.className = 'connection-badge connected';
+        badge.textContent = '● LIVE';
+    } else if (state === 'reconnecting') {
+        badge.className = 'connection-badge reconnecting';
+        badge.textContent = '↻ Reconnecting';
+    } else if (state === 'error') {
+        badge.className = 'connection-badge error';
+        badge.textContent = '✕ Error';
+    } else {
+        badge.className = 'connection-badge idle';
+        badge.textContent = '○ Idle';
+    }
 }
 
 function updateLiveStatusRow(running, title = '') {

@@ -1136,6 +1136,50 @@ select {
     margin-bottom: 1rem;
 }
 
+.live-video-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+
+.connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+}
+
+.connection-badge.connected {
+    background: rgba(102, 187, 106, 0.15);
+    color: var(--accent-green);
+    border-color: rgba(102, 187, 106, 0.3);
+}
+
+.connection-badge.reconnecting {
+    background: rgba(255, 213, 79, 0.12);
+    color: var(--accent-yellow);
+    border-color: rgba(255, 213, 79, 0.3);
+    animation: liveBlink 1.5s ease-in-out infinite;
+}
+
+.connection-badge.error {
+    background: rgba(239, 83, 80, 0.12);
+    color: var(--accent-red);
+    border-color: rgba(239, 83, 80, 0.3);
+}
+
+.connection-badge.idle {
+    background: rgba(159, 168, 218, 0.1);
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
 .video-wrapper {
     position: relative;
     width: 100%;
