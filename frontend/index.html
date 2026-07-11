@@ -88,10 +88,87 @@
         <h2 class="section-title">Try a scenario</h2>
         <p class="text-sm color-muted mb-md">Pick an edge-case scenario to watch Sherlock identify the candidate in real time.</p>
         <div class="scenario-grid" id="scenarioGrid"></div>
+
+        <h2 class="section-title">Or analyse a video live</h2>
+        <p class="text-sm color-muted mb-md">Upload a local video, paste a YouTube link, or provide a file path. Sherlock will score identity and authenticity in real time while the video plays.</p>
+        <div class="live-panel card">
+            <div class="card__header"><span class="card__header-icon">🎥</span> Live Video Analysis</div>
+
+            <div class="live-inputs">
+                <div class="input-group">
+                    <label>Upload video</label>
+                    <input type="file" id="liveUploadInput" accept="video/*">
+                </div>
+                <div class="input-group wide">
+                    <label>YouTube URL</label>
+                    <input type="text" id="liveYoutubeInput" placeholder="https://youtube.com/watch?v=...">
+                </div>
+                <div class="input-group wide">
+                    <label>Local file path</label>
+                    <input type="text" id="livePathInput" placeholder="/path/to/interview.mp4">
+                </div>
+                <div class="input-group">
+                    <label>Candidate name</label>
+                    <input type="text" id="liveCandidateInput" value="Candidate">
+                </div>
+                <div class="input-group actions">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" id="liveStartBtn">▶ Start Analysis</button>
+                </div>
+            </div>
+
+            <div class="live-status-row" id="liveStatusRow" style="display:none;">
+                <span class="live-dot" id="liveDot"></span>
+                <span id="liveStatusText">Idle</span>
+                <span id="liveVideoTitle" class="live-video-title"></span>
+                <button class="btn btn-danger" id="liveStopBtn" style="margin-left:auto;">⏹ Stop</button>
+            </div>
+        </div>
     </div>
 
     <!-- ═══ Dashboard (hidden until scenario loaded) ═══ -->
     <div id="dashboardPage" class="hidden">
+
+        <!-- Live Video Player -->
+        <div id="liveVideoPanel" class="card live-video-panel" style="display:none;">
+            <div class="card__header"><span class="card__header-icon">🎥</span> Live Video</div>
+            <div class="video-wrapper">
+                <video id="liveVideo" controls playsinline></video>
+            </div>
+            <div class="live-video-scores" id="liveVideoScores">
+                <div class="lv-score">
+                    <div class="lv-score__label">Identity</div>
+                    <div class="lv-score__value" id="lvIdentity">—</div>
+                    <div class="lv-score__bar"><div id="lvIdentityBar"></div></div>
+                </div>
+                <div class="lv-score">
+                    <div class="lv-score__label">Authenticity</div>
+                    <div class="lv-score__value" id="lvAuthenticity">—</div>
+                    <div class="lv-score__bar"><div id="lvAuthenticityBar"></div></div>
+                </div>
+                <div class="lv-score">
+                    <div class="lv-score__label">Verdict</div>
+                    <div class="lv-score__value" id="lvVerdict">—</div>
+                </div>
+                <div class="lv-score">
+                    <div class="lv-score__label">Elapsed</div>
+                    <div class="lv-score__value font-mono" id="lvElapsed">0:00</div>
+                </div>
+            </div>
+
+            <div class="verdict-card" id="verdictCard" style="display:none;">
+                <div class="verdict-card__header">
+                    <span id="verdictIcon">🛡️</span>
+                    <span id="verdictTitle">Genuine Candidate</span>
+                </div>
+                <div class="verdict-card__reasons" id="verdictReasons"></div>
+            </div>
+
+            <div class="flagged-segments" id="flaggedSegmentsPanel" style="display:none;">
+                <div class="card__header"><span class="card__header-icon">🚩</span> Flagged Speech Segments</div>
+                <div id="flaggedSegmentsList"></div>
+            </div>
+        </div>
 
         <!-- Scoreboard -->
         <div class="card mb-md">

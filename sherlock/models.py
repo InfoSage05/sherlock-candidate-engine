@@ -25,6 +25,10 @@ class SignalSource(str, Enum):
     WEBCAM_STATE = "webcam_state"
     DEEPFAKE_VIDEO = "deepfake_video"
     VOICE_LIVENESS = "voice_liveness"
+    AI_GENERATED_TEXT = "ai_generated_text"
+    AI_GENERATED_SPEECH = "ai_generated_speech"
+    READING_PATTERN = "reading_pattern"
+    UNNATURAL_PAUSE = "unnatural_pause"
     IDENTITY_UNCERTAIN = "identity_uncertain"
 
 

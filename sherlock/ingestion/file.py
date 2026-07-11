@@ -40,6 +40,7 @@ class FileSource(MediaSource):
         self.fps = fps
         self.max_frames = max_frames
         self._container = None
+        self._resampler = None
         self._frame_count = 0
 
     async def start(self) -> None:
@@ -54,6 +55,12 @@ class FileSource(MediaSource):
         import av  # lazy import: heavy dependency only needed for real files
 
         self._container = av.open(str(self.path))
+        # Prepare an audio resampler so all audio is emitted as 16 kHz mono s16.
+        self._resampler = av.audio.resampler.AudioResampler(
+            format="s16",
+            layout="mono",
+            rate=16000,
+        )
         self._running = True
         logger.info("FileSource opened %s", self.path)
 
@@ -62,6 +69,7 @@ class FileSource(MediaSource):
         if self._container is not None:
             self._container.close()
             self._container = None
+        self._resampler = None
         logger.info("FileSource stopped.")
 
     # ------------------------------------------------------------------ #
@@ -114,12 +122,15 @@ class FileSource(MediaSource):
                             timestamp_ms=int(frame.time * 1000),
                         )
                     elif isinstance(frame, av.AudioFrame):
-                        pcm = frame.to_ndarray().astype(np.int16).tobytes()
-                        yield RawMediaFrame(
-                            participant_id=self.participant_id,
-                            audio_chunk=pcm,
-                            timestamp_ms=int(frame.time * 1000),
-                        )
+                        # Resample to 16 kHz mono s16 for downstream pipelines.
+                        resampled_frames = self._resampler.resample(frame)
+                        for rf in resampled_frames:
+                            pcm = rf.to_ndarray().astype(np.int16).tobytes()
+                            yield RawMediaFrame(
+                                participant_id=self.participant_id,
+                                audio_chunk=pcm,
+                                timestamp_ms=int(frame.time * 1000),
+                            )
             except Exception as exc:  # pragma: no cover - defensive
                 logger.warning("Decode error: %s", exc)
                 continue

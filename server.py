@@ -8,14 +8,17 @@ Serves the frontend static files and provides all pipeline endpoints.
 import asyncio
 import json
 import logging
+import mimetypes
+import shutil
+import tempfile
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -64,8 +67,14 @@ class ServerState:
         self.live_session: Optional[Any] = None
         self.is_playing: bool = False
         self.playback_speed: float = 1.0
+        self.live_video_path: Optional[Path] = None
+        self.live_video_title: str = ""
+        self.uploaded_files: Dict[str, Path] = {}
 
 state = ServerState()
+
+UPLOAD_DIR = Path(tempfile.gettempdir()) / "sherlock_uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 FIXTURES_DIR = Path(__file__).parent / "sherlock" / "fixtures"
 
@@ -87,6 +96,8 @@ SIGNAL_CATEGORIES = {
     "Authenticity": [
         SignalSource.DISFLUENCY_ANOMALY, SignalSource.PAUSE_FLUENCY_PATTERN,
         SignalSource.CODING_TELEMETRY, SignalSource.GAZE_DETECTION,
+        SignalSource.AI_GENERATED_TEXT, SignalSource.AI_GENERATED_SPEECH,
+        SignalSource.READING_PATTERN, SignalSource.UNNATURAL_PAUSE,
     ],
 }
 
@@ -96,6 +107,153 @@ def get_signal_category(source: SignalSource) -> str:
         if source in sources:
             return category
     return "Other"
+
+
+def serialize_live_snapshot(sess) -> Dict:
+    """Convert a LiveSession into the same snapshot shape as replay."""
+    if not sess or not sess.engine:
+        return {"status": "no_data", "participants": [], "state": "idle"}
+
+    engine = sess.engine
+    result = engine.get_result()
+    status = sess.status
+
+    elapsed = status.get("elapsed_seconds", 0.0)
+    total = status.get("total_duration", 0.0)
+    progress = min(1.0, elapsed / total) if total > 0 else 0.0
+
+    top_id = result.top_candidate_id or "candidate"
+    top_prob = result.top_candidate_probability
+    status_str = result.status
+
+    # Single candidate participant.
+    belief = engine.beliefs.get(top_id)
+    identity_prob = belief.identity_probability if belief else top_prob
+    auth_prob = belief.authenticity_probability if belief else 0.5
+
+    participant = {
+        "id": top_id,
+        "name": status.get("video_title") or sess.context.candidate_name or "Candidate",
+        "identity_probability": round(identity_prob, 4),
+        "authenticity_probability": round(auth_prob, 4),
+        "identity_log_odds": round(belief.identity_log_odds, 3) if belief else 0.0,
+        "evidence_count": len(engine.evidence_ledger),
+        "is_candidate": True,
+        "is_speaker": True,
+        "flag_count": len([ep for ep in engine.evidence_ledger
+                           if ep.target_participant_id == top_id
+                           and ep.severity != FlagSeverity.NONE]),
+        "email": None,
+        "join_time": None,
+        "webcam_on": True,
+        "is_screen_sharing": False,
+        "device_name": "Live Video",
+        "display_name_history": [],
+    }
+
+    evidence = []
+    for ep in engine.evidence_ledger[-50:]:
+        evidence.append({
+            "source": ep.source.value,
+            "axis": ep.axis.value,
+            "target_id": ep.target_participant_id,
+            "target_name": participant["name"],
+            "delta_log_odds": round(ep.delta_log_odds, 4),
+            "confidence": round(ep.confidence, 3),
+            "rationale": ep.rationale,
+            "timestamp": ep.timestamp.isoformat(),
+            "time_display": ep.timestamp.strftime('%H:%M:%S'),
+            "severity": ep.severity.value,
+            "flag_type": ep.flag_type,
+            "recommendation": ep.recommendation,
+            "category": get_signal_category(ep.source),
+        })
+
+    flags = [e for e in evidence if e["severity"] != "none"]
+
+    # Transcript from orchestrator if available.
+    transcript = []
+    orchestrator = getattr(sess, "orchestrator", None)
+    if orchestrator:
+        for seg in getattr(orchestrator, "transcript_segments", [])[-30:]:
+            transcript.append({
+                "participant_id": seg.participant_id,
+                "name": participant["name"],
+                "text": seg.text,
+                "start_time": seg.start_time.isoformat(),
+                "time_display": seg.start_time.strftime('%H:%M:%S'),
+                "is_question": seg.is_question,
+            })
+
+    # Flagged transcript segments (text/audio authenticity signals).
+    flagged_segments = []
+    text_flags = [ep for ep in engine.evidence_ledger
+                  if ep.source in (
+                      SignalSource.AI_GENERATED_TEXT,
+                      SignalSource.READING_PATTERN,
+                      SignalSource.UNNATURAL_PAUSE,
+                      SignalSource.AI_GENERATED_SPEECH,
+                  ) and ep.severity != FlagSeverity.NONE]
+    for ep in text_flags[-10:]:
+        seg_text = ep.metadata.get("segment_text", "") if ep.metadata else ""
+        flagged_segments.append({
+            "text": seg_text or ep.rationale,
+            "time_display": ep.timestamp.strftime('%H:%M:%S'),
+            "source": ep.source.value,
+            "severity": ep.severity.value,
+            "rationale": ep.rationale,
+            "delta_log_odds": round(ep.delta_log_odds, 3),
+        })
+
+    # Verdict reasons from recent authenticity flags.
+    verdict_reasons = [
+        ep.rationale for ep in engine.evidence_ledger[-20:]
+        if ep.axis == SignalAxis.AUTHENTICITY and ep.severity != FlagSeverity.NONE
+    ][-5:]
+
+    # Timeline for charts.
+    timelines = {
+        top_id: [
+            {"time": datetime.utcnow().isoformat(), "value": round(top_prob, 4)}
+        ] + [{"time": datetime.utcnow().isoformat(), "value": round(t.get("confidence", 0), 4)}
+             for t in status.get("timeline", [])[-30:]]
+    }
+
+    alert = None
+    critical = [ep for ep in engine.evidence_ledger if ep.severity == FlagSeverity.CRITICAL]
+    if critical:
+        f = critical[-1]
+        alert = {
+            "message": f.rationale[:150],
+            "participant": participant["name"],
+        }
+
+    return {
+        "status": status_str,
+        "top_candidate_id": top_id,
+        "top_candidate_probability": round(top_prob, 4),
+        "ambiguity_gap": round(result.ambiguity_gap, 4),
+        "current_speaker_id": top_id,
+        "elapsed_seconds": round(elapsed, 1),
+        "timestamp": datetime.utcnow().isoformat(),
+        "progress": round(progress, 4),
+        "total_duration": round(total, 1),
+        "participants": [participant],
+        "evidence": evidence,
+        "flags": flags,
+        "transcript": transcript,
+        "flagged_segments": flagged_segments,
+        "verdict_reasons": verdict_reasons,
+        "timelines": timelines,
+        "alert": alert,
+        "evidence_count": len(engine.evidence_ledger),
+        "packet_index": len(engine.evidence_ledger),
+        "total_packets": 0,
+        "live_state": status.get("state", "idle"),
+        "video_title": status.get("video_title", ""),
+        "p95_latency_ms": status.get("p95_latency_ms", 0.0),
+        "dropped_non_candidate": status.get("dropped_non_candidate", 0),
+    }
 
 
 # ============================================================================
@@ -453,14 +611,89 @@ async def start_live(req: LiveStartRequest):
     if state.live_session and state.live_session.running:
         raise HTTPException(status_code=409, detail="A live session is already running")
 
+    # Resolve uploaded file by token if provided.
+    file_path = req.file_path or None
+    if file_path and file_path.startswith("upload://"):
+        token = file_path.replace("upload://", "")
+        uploaded = state.uploaded_files.get(token)
+        if uploaded and uploaded.exists():
+            file_path = str(uploaded)
+        else:
+            raise HTTPException(status_code=404, detail="Uploaded file not found")
+
+    # Validate local file path early so the thread doesn't crash silently.
+    if file_path and not Path(file_path).exists():
+        raise HTTPException(status_code=404, detail=f"Video file not found: {file_path}")
+
     sess = LiveSession()
     sess.start(
-        file_path=req.file_path or None,
+        file_path=file_path,
         youtube_url=req.youtube_url or None,
         candidate_name=req.candidate_name,
     )
     state.live_session = sess
-    return {"success": True, "state": "running"}
+    state.feedback_loop = FeedbackLoop(sess.engine)
+
+    # Determine playable video path for the frontend.
+    video_path = None
+    video_title = ""
+    if sess.youtube_info:
+        video_path = Path(sess.youtube_info.file_path)
+        video_title = sess.youtube_info.title
+    elif file_path:
+        video_path = Path(file_path)
+        video_title = video_path.name
+
+    state.live_video_path = video_path
+    state.live_video_title = video_title
+
+    return {
+        "success": True,
+        "state": "running",
+        "video_url": "/api/live/video",
+        "video_title": video_title,
+    }
+
+
+@app.post("/api/live/upload")
+async def upload_live_video(file: UploadFile = File(...)):
+    """Upload a video file for live analysis and return a token."""
+    ext = Path(file.filename or "video.mp4").suffix
+    token = f"{int(time.time())}_{file.filename or 'upload'}"
+    dest = UPLOAD_DIR / f"{token}{ext}"
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    state.uploaded_files[token] = dest
+    return {
+        "success": True,
+        "token": token,
+        "filename": file.filename,
+        "file_path": f"upload://{token}",
+        "size_bytes": dest.stat().st_size,
+    }
+
+
+@app.get("/api/live/video")
+async def serve_live_video():
+    """Serve the current live analysis video file."""
+    if not state.live_video_path or not state.live_video_path.exists():
+        raise HTTPException(status_code=404, detail="No live video available")
+
+    path = state.live_video_path
+    media_type, _ = mimetypes.guess_type(str(path))
+    media_type = media_type or "video/mp4"
+    return FileResponse(str(path), media_type=media_type, filename=path.name)
+
+
+@app.get("/api/live/info")
+async def live_info():
+    """Get information about the current live video."""
+    return {
+        "running": bool(state.live_session and state.live_session.running),
+        "video_url": "/api/live/video" if state.live_video_path else None,
+        "video_title": state.live_video_title,
+        "video_path": str(state.live_video_path) if state.live_video_path else None,
+    }
 
 
 @app.post("/api/live/stop")
@@ -469,16 +702,22 @@ async def stop_live():
     if state.live_session:
         state.live_session.stop()
         state.live_session = None
+    state.live_video_path = None
+    state.live_video_title = ""
     return {"success": True}
 
 
 @app.get("/api/live/status")
 async def live_status():
-    """Get live analysis status."""
+    """Get live analysis status as a dashboard-compatible snapshot."""
     if not state.live_session:
-        return {"state": "idle", "confidence": 0, "flags": []}
+        return {"state": "idle", "confidence": 0, "flags": [], "status": "no_data"}
 
-    return state.live_session.refresh_status()
+    sess = state.live_session
+    sess.refresh_status()
+    snapshot = serialize_live_snapshot(sess)
+    snapshot["playback_state"] = "live"
+    return snapshot
 
 
 # ============================================================================
@@ -699,17 +938,20 @@ async def ws_replay(websocket: WebSocket):
 
 @app.websocket("/ws/live")
 async def ws_live(websocket: WebSocket):
-    """WebSocket for live A/V analysis updates (streams every ~1s)."""
+    """WebSocket for live A/V analysis updates (streams dashboard snapshots every ~1s)."""
     await websocket.accept()
     logger.info("WebSocket /ws/live connected")
 
     try:
         while True:
             if state.live_session and state.live_session.running:
-                status = state.live_session.refresh_status()
-                await websocket.send_json(status)
+                sess = state.live_session
+                sess.refresh_status()
+                snapshot = serialize_live_snapshot(sess)
+                snapshot["playback_state"] = "live"
+                await websocket.send_json(snapshot)
             else:
-                await websocket.send_json({"state": "idle"})
+                await websocket.send_json({"state": "idle", "status": "no_data"})
             await asyncio.sleep(1.0)
     except WebSocketDisconnect:
         logger.info("WebSocket /ws/live disconnected")

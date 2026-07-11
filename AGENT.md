@@ -756,7 +756,36 @@ Implement in this order to keep the system testable at each step:
 7. **Orchestrator + operator dashboard integration** — ties everything together.
 8. **Calibration harness + feedback-loop extensions** — makes confidence trustworthy.
 
-### 10.7 Definition of Done
+### 10.7 Frontend Video Analysis Integration
+
+The operator dashboard now exposes a dedicated **Live Video Analysis** flow:
+
+1. **Input options on the landing page:**
+   - Upload a local video file (`/api/live/upload`).
+   - Paste a YouTube URL (downloaded server-side via `yt-dlp`).
+   - Provide an absolute local file path.
+2. **Start analysis** (`/api/live/start`) launches the `LiveSession` / `RealtimeInferenceOrchestrator` and returns a playable video URL (`/api/live/video`).
+3. **In-dashboard video player:** an HTML5 `<video>` tile appears at the top of the dashboard.
+4. **Real-time scores under the video:** the existing `/ws/live` WebSocket now emits dashboard-compatible snapshots every second. The frontend displays:
+   - Identity confidence with a coloured progress bar.
+   - Authenticity confidence with a coloured progress bar.
+   - **Genuine / Suspicious / Likely Cheating verdict** with the latest reasons.
+   - Elapsed / video time.
+5. **Flagged speech segments:** transcript lines that triggered AI-generated-text, reading-pattern, unnatural-pause, or AI-generated-speech signals are surfaced directly under the video with severity and rationale.
+6. **Full dashboard reuse:** the live snapshot is serialized into the same shape as replay snapshots, so the scoreboard, event feed, flags, evidence room, timeline, and candidate-info tabs all work without modification.
+
+### 10.7.1 Audio-First Cheating Detection Signals
+
+To specifically answer "is the candidate reading AI-generated text aloud?", the live path now runs two transcript-level and one audio-level signal:
+
+- **`AI_GENERATED_TEXT`** (`sherlock/pipelines/text_authenticity.py`): heuristic + optional LLM sensor that flags overly formal transitions, uniform sentence length, low personal language, and unnaturally low disfluency.  Combines into a single weak AUTHENTICITY evidence packet.
+- **`READING_PATTERN`** (`sherlock/pipelines/text_authenticity.py`): flags enumerated transitions, repeated phrases, and low filler rate that suggest reading from a hidden screen/phone.
+- **`UNNATURAL_PAUSE`** (`sherlock/pipelines/text_authenticity.py`): flags a long pause (>4s) followed by a structurally fluent answer, which is the distinctive "look it up then read it" signature.
+- **`AI_GENERATED_SPEECH`** (`sherlock/pipelines/audio_authenticity.py`): open-source audio anti-spoofing (SpeechBrain AASIST when installed, heuristic spectral/prosodic fallback otherwise).  Detects synthetic/TTS/cloned speech directly from the audio stream.
+
+All four are ingested into the existing `FusionEngine` on the `AUTHENTICITY` axis.  They are weak, independently-inspectable signals; the final verdict is driven by the fused authenticity probability, not any single flag.
+
+### 10.8 Definition of Done
 
 Sherlock can be considered production-ready for A/V fraud detection when:
 
@@ -766,6 +795,6 @@ Sherlock can be considered production-ready for A/V fraud detection when:
 - [ ] Deepfake, voice-liveness, gaze, and live transcription pipelines emit `EvidencePacket`s into the existing ledger.
 - [ ] End-to-end latency is < 500 ms p95.
 - [ ] False-positive rates on legitimate candidates meet the thresholds in §10.5.
-- [ ] Operator dashboard shows live candidate A/V tile with active authenticity flags.
+- [x] Operator dashboard shows live candidate A/V tile with active authenticity flags.
 - [ ] All new code has unit tests and runs in CI.
 

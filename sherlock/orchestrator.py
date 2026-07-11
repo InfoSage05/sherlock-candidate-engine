@@ -28,8 +28,10 @@ from .gate import CandidateStreamGate
 from .ingestion.base import MediaSource
 from .models import EvidencePacket, RawMediaFrame
 from .signals.behavioral import BehavioralSignalExtractor
+from .pipelines.audio_authenticity import AudioAuthenticityPipeline
 from .pipelines.deepfake import DeepfakeVideoPipeline
 from .pipelines.gaze_cv import GazeBehavioralPipeline
+from .pipelines.text_authenticity import TextAuthenticityPipeline
 from .pipelines.transcription_live import LiveTranscriptionPipeline
 from .pipelines.voice_liveness import VoiceLivenessPipeline
 
@@ -50,6 +52,8 @@ class RealtimeInferenceOrchestrator:
         voice: Optional[VoiceLivenessPipeline] = None,
         gaze: Optional[GazeBehavioralPipeline] = None,
         transcription: Optional[LiveTranscriptionPipeline] = None,
+        text_authenticity: Optional[TextAuthenticityPipeline] = None,
+        audio_authenticity: Optional[AudioAuthenticityPipeline] = None,
         candidate_queue_size: int = MAX_QUEUE,
     ) -> None:
         self.engine = engine
@@ -59,7 +63,9 @@ class RealtimeInferenceOrchestrator:
         self.deepfake = deepfake or DeepfakeVideoPipeline(context)
         self.voice = voice or VoiceLivenessPipeline(context)
         self.gaze = gaze or GazeBehavioralPipeline(context)
+        self.audio_authenticity = audio_authenticity or AudioAuthenticityPipeline(context)
         self.transcription = transcription or LiveTranscriptionPipeline(context)
+        self.text_authenticity = text_authenticity or TextAuthenticityPipeline(context)
         self._candidate_queue: asyncio.Queue = asyncio.Queue(maxsize=candidate_queue_size)
         self._running = False
         self._tasks: List[asyncio.Task] = []
@@ -132,20 +138,23 @@ class RealtimeInferenceOrchestrator:
         try:
             segments = self.transcription.process(frame)
             if segments:
+                all_evidence: List[EvidencePacket] = []
                 for seg in segments:
                     self.transcript_segments.append(seg)
                     self._behavioral.add_transcript_segment(seg)
-                # Convert transcript into identity evidence immediately.
-                evidence = self._behavioral.extract_all()
-                if evidence:
-                    self.engine.ingest_batch(evidence)
+                    # Text-level authenticity (AI-generated text, reading pattern, pauses).
+                    all_evidence.extend(self.text_authenticity.process(seg))
+                # Convert transcript into identity/behavioral evidence.
+                all_evidence.extend(self._behavioral.extract_all())
+                if all_evidence:
+                    self.engine.ingest_batch(all_evidence)
         except Exception as exc:
             logger.warning("Transcription pipeline error: %s", exc)
 
     async def _run_candidate_pipelines(self, frame) -> None:
         packets: List[EvidencePacket] = []
         t0 = time.perf_counter()
-        for pipeline in (self.deepfake, self.voice, self.gaze):
+        for pipeline in (self.deepfake, self.voice, self.gaze, self.audio_authenticity):
             try:
                 result = pipeline.process(frame)
             except Exception as exc:

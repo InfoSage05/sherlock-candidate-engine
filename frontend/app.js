@@ -26,6 +26,10 @@ const appState = {
     notes:          [],
     ws:             null,
     wsReconnectTimer: null,
+    liveMode:       false,
+    liveRunning:    false,
+    liveWs:         null,
+    liveVideoUrl:   null,
 };
 
 // ============================================================================
@@ -96,12 +100,18 @@ async function loadScenarios() {
 
 async function loadScenario(id) {
     try {
+        // Clean up any active live session first.
+        if (appState.liveMode) {
+            await stopLive();
+        }
+
         await api('/api/replay/load', {
             method: 'POST',
             body: JSON.stringify({ scenario_id: id }),
         });
         appState.scenarioLoaded = true;
         appState.isPlaying = false;
+        appState.liveMode = false;
         showDashboard();
         // Get initial snapshot
         const snap = await api('/api/replay/snapshot');
@@ -152,8 +162,8 @@ function connectReplayWS() {
     ws.onclose = () => {
         console.log('WS disconnected');
         appState.ws = null;
-        // Auto-reconnect if scenario is loaded
-        if (appState.scenarioLoaded) {
+        // Auto-reconnect if scenario is loaded and not in live mode
+        if (appState.scenarioLoaded && !appState.liveMode) {
             appState.wsReconnectTimer = setTimeout(connectReplayWS, 2000);
         }
     };
@@ -165,6 +175,272 @@ function wsSend(cmd) {
     if (appState.ws && appState.ws.readyState === WebSocket.OPEN) {
         appState.ws.send(JSON.stringify(cmd));
     }
+}
+
+// ============================================================================
+// LIVE A/V ANALYSIS
+// ============================================================================
+
+async function startLive() {
+    const fileInput = $('#liveUploadInput');
+    const youtubeInput = $('#liveYoutubeInput');
+    const pathInput = $('#livePathInput');
+    const candidateInput = $('#liveCandidateInput');
+
+    const youtubeUrl = youtubeInput?.value?.trim() || '';
+    const filePath = pathInput?.value?.trim() || '';
+    const candidateName = candidateInput?.value?.trim() || 'Candidate';
+    const file = fileInput?.files?.[0];
+
+    if (!file && !youtubeUrl && !filePath) {
+        showToast('Please upload a video, paste a YouTube link, or enter a file path.', true);
+        return;
+    }
+
+    let body = { candidate_name: candidateName };
+
+    try {
+        if (file) {
+            const form = new FormData();
+            form.append('file', file);
+            const uploadRes = await fetch(`${API_BASE}/api/live/upload`, {
+                method: 'POST',
+                body: form,
+            });
+            if (!uploadRes.ok) {
+                const err = await uploadRes.json().catch(() => ({}));
+                throw new Error(err.detail || 'Upload failed');
+            }
+            const uploadData = await uploadRes.json();
+            body.file_path = uploadData.file_path;
+        } else if (youtubeUrl) {
+            body.youtube_url = youtubeUrl;
+        } else {
+            body.file_path = filePath;
+        }
+
+        const startRes = await api('/api/live/start', {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
+
+        appState.liveMode = true;
+        appState.liveRunning = true;
+        appState.liveVideoUrl = startRes.video_url;
+
+        showDashboard();
+        setupLiveVideo(startRes.video_url, startRes.video_title);
+        updateLiveStatusRow(true, startRes.video_title);
+        connectLiveWS();
+
+        showToast('Live analysis started 🎥');
+    } catch (e) {
+        console.error('Failed to start live analysis:', e);
+        showToast('Error: ' + e.message, true);
+    }
+}
+
+async function stopLive() {
+    try {
+        await api('/api/live/stop', { method: 'POST' });
+    } catch (e) {
+        console.error('Failed to stop live analysis:', e);
+    }
+
+    const video = $('#liveVideo');
+    if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+    }
+
+    if (appState.liveWs) {
+        appState.liveWs.close();
+        appState.liveWs = null;
+    }
+
+    appState.liveMode = false;
+    appState.liveRunning = false;
+    appState.liveVideoUrl = null;
+
+    updateLiveStatusRow(false);
+    showLanding();
+    showToast('Live analysis stopped');
+}
+
+function setupLiveVideo(url, title) {
+    const panel = $('#liveVideoPanel');
+    const video = $('#liveVideo');
+    if (!panel || !video) return;
+
+    panel.style.display = 'block';
+    video.src = url;
+    video.load();
+
+    // Play once metadata is loaded so duration is available.
+    video.onloadedmetadata = () => {
+        video.play().catch(err => console.warn('Auto-play blocked:', err));
+    };
+}
+
+function connectLiveWS() {
+    if (appState.liveWs) {
+        appState.liveWs.close();
+        appState.liveWs = null;
+    }
+
+    const ws = new WebSocket(`${WS_BASE}/ws/live`);
+    appState.liveWs = ws;
+
+    ws.onopen = () => console.log('Live WS connected');
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.state === 'idle' && !appState.liveRunning) return;
+            appState.snapshot = data;
+            updateUI(data);
+            updateLiveVideoScores(data);
+        } catch (e) {
+            console.error('Live WS message parse error:', e);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log('Live WS disconnected');
+        appState.liveWs = null;
+        if (appState.liveRunning) {
+            setTimeout(connectLiveWS, 2000);
+        }
+    };
+
+    ws.onerror = (e) => console.error('Live WS error:', e);
+}
+
+function updateLiveStatusRow(running, title = '') {
+    const row = $('#liveStatusRow');
+    const dot = $('#liveDot');
+    const text = $('#liveStatusText');
+    const titleEl = $('#liveVideoTitle');
+    if (!row || !dot || !text) return;
+
+    row.style.display = 'flex';
+    if (running) {
+        dot.classList.remove('idle');
+        text.textContent = 'Analysing';
+        titleEl.textContent = title ? `— ${title}` : '';
+    } else {
+        dot.classList.add('idle');
+        text.textContent = 'Idle';
+        titleEl.textContent = '';
+    }
+}
+
+function updateLiveVideoScores(data) {
+    if (!data || data.status === 'no_data') return;
+
+    const participant = data.participants?.[0];
+    const identity = participant ? participant.identity_probability : (data.top_candidate_probability || 0);
+    const authenticity = participant ? participant.authenticity_probability : 0.5;
+
+    const idEl = $('#lvIdentity');
+    const idBar = $('#lvIdentityBar');
+    const authEl = $('#lvAuthenticity');
+    const authBar = $('#lvAuthenticityBar');
+    const verdictEl = $('#lvVerdict');
+    const elapsedEl = $('#lvElapsed');
+
+    if (idEl) idEl.textContent = `${(identity * 100).toFixed(1)}%`;
+    if (idBar) {
+        idBar.style.width = `${identity * 100}%`;
+        idBar.style.background = probColor(identity);
+    }
+
+    if (authEl) authEl.textContent = `${(authenticity * 100).toFixed(1)}%`;
+    if (authBar) {
+        authBar.style.width = `${authenticity * 100}%`;
+        authBar.style.background = probColor(authenticity);
+    }
+
+    const verdict = computeVerdict(authenticity);
+    if (verdictEl) {
+        verdictEl.textContent = verdict.label;
+        verdictEl.style.color = verdict.color;
+    }
+
+    renderVerdictCard(verdict, data.verdict_reasons || []);
+    renderFlaggedSegments(data.flagged_segments || []);
+
+    if (elapsedEl) elapsedEl.textContent = formatSeconds(data.elapsed_seconds || 0);
+}
+
+function computeVerdict(authenticity) {
+    if (authenticity >= 0.65) {
+        return { label: 'Genuine', className: 'genuine', icon: '🛡️', color: 'var(--accent-green)' };
+    }
+    if (authenticity >= 0.35) {
+        return { label: 'Suspicious', className: 'suspicious', icon: '⚠️', color: 'var(--accent-yellow)' };
+    }
+    return { label: 'Likely Cheating', className: 'cheating', icon: '🚩', color: 'var(--accent-red)' };
+}
+
+function renderVerdictCard(verdict, reasons) {
+    const card = $('#verdictCard');
+    const icon = $('#verdictIcon');
+    const title = $('#verdictTitle');
+    const reasonsEl = $('#verdictReasons');
+    if (!card || !icon || !title || !reasonsEl) return;
+
+    card.style.display = 'block';
+    card.className = `verdict-card ${verdict.className}`;
+    icon.textContent = verdict.icon;
+    title.textContent = verdict.label;
+    title.style.color = verdict.color;
+
+    if (reasons.length === 0) {
+        reasonsEl.innerHTML = '<p>No authenticity concerns detected yet.</p>';
+    } else {
+        reasonsEl.innerHTML = '<ul>' +
+            reasons.slice(-5).map(r => `<li>${escapeHtml(r)}</li>`).join('') +
+            '</ul>';
+    }
+}
+
+function renderFlaggedSegments(segments) {
+    const panel = $('#flaggedSegmentsPanel');
+    const list = $('#flaggedSegmentsList');
+    if (!panel || !list) return;
+
+    if (segments.length === 0) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    panel.style.display = 'block';
+    list.innerHTML = '';
+    for (const seg of segments) {
+        const cls = 'flagged-segment ' + (seg.severity === 'critical' ? 'critical' : 'warning');
+        const div = el('div', { className: cls });
+        div.innerHTML = `
+            <div class="flagged-segment__text">"${escapeHtml(seg.text)}"</div>
+            <div class="flagged-segment__meta">
+                <span>${seg.time_display}</span>
+                <span>${seg.source}</span>
+                <span>Δ ${seg.delta_log_odds > 0 ? '+' : ''}${seg.delta_log_odds.toFixed(3)}</span>
+            </div>
+            <div class="flagged-segment__rationale">${escapeHtml(seg.rationale)}</div>
+        `;
+        list.appendChild(div);
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 // ============================================================================
@@ -211,7 +487,7 @@ function updateUI(data) {
             break;
         case 'timeline':
             renderTimeline(data);
-            renderTranscript(data.transcript);
+            renderTranscript(data.transcript, data.flagged_segments || []);
             break;
         case 'candidate':
             renderCandidateInfo(data);
@@ -517,7 +793,7 @@ function renderTimeline(data) {
     if (totalLabel) totalLabel.textContent = formatSeconds(total);
 }
 
-function renderTranscript(transcript) {
+function renderTranscript(transcript, flaggedSegments = []) {
     const container = $('#transcriptContainer');
     if (!container) return;
 
@@ -528,10 +804,16 @@ function renderTranscript(transcript) {
 
     container.innerHTML = '';
     for (const seg of transcript) {
-        const cls = 'transcript-segment' + (seg.is_question ? ' question' : '');
+        const isFlagged = flaggedSegments.some(fs =>
+            fs.text && seg.text && (fs.text.includes(seg.text) || seg.text.includes(fs.text))
+        );
+        const cls = 'transcript-segment' +
+            (seg.is_question ? ' question' : '') +
+            (isFlagged ? ' flagged' : '');
+        const flagIcon = isFlagged ? '🚩 ' : '';
         const div = el('div', { className: cls });
         div.innerHTML = `
-            <span class="transcript-segment__speaker">${seg.name}</span>: ${seg.text}
+            <span class="transcript-segment__speaker">${flagIcon}${seg.name}</span>: ${seg.text}
             <div class="transcript-segment__time">${seg.time_display}</div>
         `;
         container.appendChild(div);
@@ -787,9 +1069,15 @@ function showDashboard() {
     $('#landingPage').classList.add('hidden');
     $('#dashboardPage').classList.remove('hidden');
     $('#statusDisplay').style.display = '';
-    $('#playbackControls').style.display = '';
+    $('#playbackControls').style.display = appState.liveMode ? 'none' : '';
     $('#progressDisplay').style.display = '';
     $('#loadBtn').style.display = 'none';
+
+    if (appState.liveMode) {
+        $('#liveVideoPanel').style.display = 'block';
+    } else {
+        $('#liveVideoPanel').style.display = 'none';
+    }
 }
 
 function showLanding() {
@@ -798,6 +1086,7 @@ function showLanding() {
     $('#statusDisplay').style.display = 'none';
     $('#playbackControls').style.display = 'none';
     $('#progressDisplay').style.display = 'none';
+    $('#liveVideoPanel').style.display = 'none';
 }
 
 function updatePlayButton() {
@@ -819,6 +1108,19 @@ function setupEventHandlers() {
         const id = e.target.value;
         if (id) {
             loadScenario(id);
+        }
+    });
+
+    // Live analysis start/stop
+    $('#liveStartBtn')?.addEventListener('click', startLive);
+    $('#liveStopBtn')?.addEventListener('click', stopLive);
+
+    // Sync live video current time to elapsed display
+    const liveVideo = $('#liveVideo');
+    liveVideo?.addEventListener('timeupdate', () => {
+        const elapsedEl = $('#lvElapsed');
+        if (elapsedEl && liveVideo.duration) {
+            elapsedEl.textContent = formatSeconds(liveVideo.currentTime);
         }
     });
 
@@ -1006,8 +1308,25 @@ function showToast(message, isError = false) {
 // INIT
 // ============================================================================
 
+async function checkExistingLiveSession() {
+    try {
+        const info = await api('/api/live/info');
+        if (info.running) {
+            appState.liveMode = true;
+            appState.liveRunning = true;
+            appState.liveVideoUrl = info.video_url;
+            showDashboard();
+            setupLiveVideo(info.video_url, info.video_title);
+            updateLiveStatusRow(true, info.video_title);
+            connectLiveWS();
+        }
+    } catch (e) {
+        console.log('No existing live session');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     setupEventHandlers();
     loadScenarios();
-    showLanding();
+    checkExistingLiveSession();
 });
