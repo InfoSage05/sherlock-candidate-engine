@@ -5,5 +5,13 @@ from __future__ import annotations
 from .base import MediaSource
 from .file import FileSource
 from .webrtc import WebRTCSource
+from .youtube import YouTubeVideo, download_youtube_video, is_youtube_url
 
-__all__ = ["MediaSource", "FileSource", "WebRTCSource"]
+__all__ = [
+    "MediaSource",
+    "FileSource",
+    "WebRTCSource",
+    "YouTubeVideo",
+    "download_youtube_video",
+    "is_youtube_url",
+]

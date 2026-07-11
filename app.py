@@ -5,6 +5,7 @@ Operations console with live scoreboard, flags, evidence room, and candidate int
 """
 
 import json
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
@@ -56,8 +57,14 @@ DARK_THEME_CSS = """
         --font-head: 'Sora', 'Inter', sans-serif;
     }
 
-    html, body, [class*="st-"], .stApp {
+    html, body, [class*="st-"]:not(.material-icons):not([class*="material-icons"]):not([class*="MaterialIcons"]):not([class*="icon"]):not([class*="Icon"]):not(svg):not(i), .stApp {
         font-family: var(--font-body) !important;
+    }
+
+    .material-icons,
+    [class*="material-icons"],
+    [class*="MaterialIcons"] {
+        font-family: 'Material Icons' !important;
     }
 
     .stApp {
@@ -212,13 +219,15 @@ DARK_THEME_CSS = """
     .hero { text-align: center; padding: 2.5rem 1rem 1.5rem; border-radius: 16px; background: linear-gradient(135deg, rgba(92,107,192,0.12) 0%, rgba(30,35,64,0.3) 100%); border: 1px solid var(--border-color); margin-bottom: 2rem; }
     .hero h1 { font-size: 2.8rem; margin-bottom: 0.4rem; background: linear-gradient(90deg, #e8eaf6, #9fa8da); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p  { font-size: 1.05rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
-    .section-title { font-size: 1.4rem; margin: 2rem 0 0.8rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border-color); }
-    .feature-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; height: 100%; }
-    .feature-card .icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .feature-card h4   { font-size: 1rem; margin-bottom: 0.3rem; }
-    .feature-card p    { font-size: 0.85rem; color: var(--text-secondary); margin: 0; }
-    .scenario-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; height: 100%; }
+    .section-title { font-size: 1.4rem; margin: 2rem 0 0.8rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border-color); clear: both; }
+    .feature-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; min-height: 120px; margin-bottom: 1rem; overflow: hidden; }
+    .feature-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+    .feature-card h4   { font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .feature-card p    { font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+    .scenario-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; min-height: 140px; margin-bottom: 1rem; overflow: hidden; }
     .scenario-card .num { display: inline-block; width: 1.8rem; height: 1.8rem; line-height: 1.8rem; text-align: center; border-radius: 50%; background: var(--accent-blue); color: white; font-weight: 700; font-family: var(--font-head); margin-bottom: 0.5rem; }
+    .scenario-card h4 { font-size: 0.95rem; margin-bottom: 0.4rem; font-weight: 600; }
+    .scenario-card p  { font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.4; }
 
     /* --- Participant tile (Transcript & Candidate Info) --- */
     .participant-tile {
@@ -243,6 +252,33 @@ DARK_THEME_CSS = """
     .evidence-item.authenticity { border-left-color: var(--accent-orange); }
     .evidence-item.critical    { border-left-color: var(--accent-red); }
     .evidence-item.warning     { border-left-color: var(--accent-yellow); }
+
+    /* --- Fix expander header overlap (arrow icon vs label text) --- */
+    [data-testid="stExpander"] details summary {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        min-height: 2.5rem;
+        padding: 0.5rem 0.75rem !important;
+    }
+    [data-testid="stExpander"] details summary > svg {
+        flex-shrink: 0;
+        margin-right: 0.25rem;
+    }
+    [data-testid="stExpander"] details summary p,
+    [data-testid="stExpander"] details summary span {
+        overflow: visible !important;
+        white-space: normal !important;
+        text-overflow: unset !important;
+        line-height: 1.4;
+    }
+    /* Fix Streamlit page title on narrow viewports */
+    h1[data-testid="stHeadingWithActionElements"],
+    .stApp h1 {
+        font-size: clamp(1.4rem, 3vw, 2rem) !important;
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+    }
 </style>
 """
 
@@ -898,10 +934,13 @@ def render_landing_page():
         ("🧾", "Explanation", "Every number traces back to an ordered evidence ledger."),
         ("👤", "Feedback", "Interviewer confirm/correct recalibrates signal weights."),
     ]
-    sc = st.columns(len(steps))
-    for col, (icon, title, desc) in zip(sc, steps):
-        with col:
-            st.markdown(f'<div class="feature-card"><div class="icon">{icon}</div><h4>{title}</h4><p>{desc}</p></div>', unsafe_allow_html=True)
+    # Render in rows of 3 to avoid overcrowding.
+    for row_start in range(0, len(steps), 3):
+        row_steps = steps[row_start:row_start + 3]
+        sc = st.columns(3)
+        for col_idx, (icon, title, desc) in enumerate(row_steps):
+            with sc[col_idx]:
+                st.markdown(f'<div class="feature-card"><div class="icon">{icon}</div><h4>{title}</h4><p>{desc}</p></div>', unsafe_allow_html=True)
 
     st.markdown('<h2 class="section-title">Try a scenario</h2>', unsafe_allow_html=True)
     st.caption("Pick an edge-case scenario to watch Sherlock identify the candidate in real time.")
@@ -1081,56 +1120,157 @@ def render_bottom_bar():
 # ============================================================================
 
 def render_live_panel():
-    """Experimental live A/V analysis (Prompt 10.3.7).
-
-    Runs independently of the fixture replay: it launches the real-time
-    orchestrator on a media file (or a synthetic frame stream) and displays the
-    live candidate identification plus any authenticity flags. Only the
-    identified candidate's frames are analyzed.
-    """
     if not _LIVE_AVAILABLE:
         return
-    with st.expander("🟢 Live A/V Analysis (experimental)", expanded=False):
-        st.caption(
-            "Runs the real-time orchestrator on a media file (or synthetic frames). "
-            "Only the identified candidate's frames are sent to fraud-detection pipelines."
+
+    with st.expander("🟢 Live A/V Analysis", expanded=True):
+        st.markdown(
+            "Paste a **YouTube URL** or a **local file path** below. "
+            "The system will download the video, identify the candidate, and run "
+            "real-time fraud-detection pipelines (deepfake, voice-liveness, gaze)."
         )
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            file_path = st.text_input("Media file path (blank = synthetic)", key="live_path")
-        with col2:
-            cand_name = st.text_input("Candidate name", value="Candidate", key="live_cand")
-        bcol1, bcol2 = st.columns(2)
+
+        # --- Input mode selector --------------------------------------------- #
+        input_mode = st.radio(
+            "Input source",
+            ["YouTube URL", "Local file", "Synthetic (demo)"],
+            horizontal=True,
+            key="live_input_mode",
+        )
+
+        youtube_url = ""
+        file_path = ""
+        if input_mode == "YouTube URL":
+            youtube_url = st.text_input(
+                "YouTube URL",
+                placeholder="https://www.youtube.com/watch?v=...",
+                key="live_yt_url",
+            )
+        elif input_mode == "Local file":
+            file_path = st.text_input(
+                "File path",
+                placeholder="/path/to/video.mp4",
+                key="live_file_path",
+            )
+
+        cand_name = st.text_input("Candidate name", value="Candidate", key="live_cand")
+
+        # --- Start / Stop controls ------------------------------------------ #
+        bcol1, bcol2 = st.columns([1, 1])
         with bcol1:
-            if st.button("▶ Start live", key="live_start"):
+            is_running = (
+                st.session_state.live_session is not None
+                and st.session_state.live_session.running
+            )
+            if st.button("▶ Start analysis", key="live_start", disabled=is_running):
                 sess = LiveSession()
-                sess.start(file_path if file_path else None, candidate_name=cand_name)
+                with st.spinner("Downloading / preparing video..."):
+                    sess.start(
+                        file_path=file_path or None,
+                        youtube_url=youtube_url or None,
+                        candidate_name=cand_name,
+                    )
                 st.session_state.live_session = sess
                 st.rerun()
         with bcol2:
-            if st.button("■ Stop live", key="live_stop"):
+            if st.button("■ Stop", key="live_stop", disabled=not is_running):
                 if st.session_state.live_session:
                     st.session_state.live_session.stop()
                 st.session_state.live_session = None
                 st.rerun()
 
+        # --- Live dashboard ------------------------------------------------- #
         sess = st.session_state.live_session
-        if sess:
-            status = sess.refresh_status()
-            st.write(f"**State:** {status['state']}")
-            st.write(
-                f"**Top candidate:** {status['top_candidate_id']} "
-                f"({status['confidence']:.1%} confidence)"
-            )
-            st.write(
-                f"**p95 latency:** {status['p95_latency_ms']:.1f} ms | "
-                f"**non-candidate frames dropped:** {status['dropped_non_candidate']}"
-            )
-            if status["flags"]:
-                for f in status["flags"]:
-                    st.warning(f"[{f['severity']}] {f['source']}: {f['rationale']}")
+        if not sess:
+            st.info("Enter a YouTube URL or file path above and click **Start analysis**.")
+            return
+
+        status = sess.refresh_status()
+
+        # --- Video title ---------------------------------------------------- #
+        if status.get("video_title"):
+            st.markdown(f"**Video:** {status['video_title']}")
+
+        # --- Progress ------------------------------------------------------- #
+        elapsed = status.get("elapsed_seconds", 0)
+        total = status.get("total_duration", 0)
+        if total > 0:
+            progress = min(elapsed / total, 1.0)
+            st.progress(progress, text=f"{elapsed:.0f}s / {total:.0f}s ({progress:.0%})")
+
+        # --- Top-line metrics ----------------------------------------------- #
+        col_a, col_b, col_c, col_d = st.columns(4)
+        col_a.metric("Candidate", status.get("top_candidate_id") or "?")
+        col_b.metric("Confidence", f"{status['confidence']:.1%}")
+        col_c.metric("Latency", f"{status['p95_latency_ms']:.0f} ms")
+        col_d.metric("Frames Dropped", status["dropped_non_candidate"])
+
+        # --- Refresh indicator + button ------------------------------------ #
+        refcol1, refcol2 = st.columns([4, 1])
+        with refcol1:
+            if is_running:
+                st.caption(
+                    f"🔄 Live — last update {elapsed:.0f}s into the video. "
+                    f"Click **Refresh** for latest scores."
+                )
             else:
-                st.info("No active flags.")
+                st.caption("⏹ Stopped — restart to analyze again.")
+        with refcol2:
+            if st.button("🔄 Refresh", key="live_refresh"):
+                st.rerun()
+
+        # --- Confidence timeline chart -------------------------------------- #
+        timeline = status.get("timeline", [])
+        if len(timeline) > 1:
+            import plotly.graph_objects as go
+
+            times = [t["elapsed"] for t in timeline]
+            confs = [t["confidence"] for t in timeline]
+            gaps = [t["gap"] for t in timeline]
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=times, y=confs, mode="lines", name="Confidence",
+                line=dict(color="#00cc96", width=2),
+            ))
+            fig.add_trace(go.Scatter(
+                x=times, y=gaps, mode="lines", name="Ambiguity Gap",
+                line=dict(color="#ef553b", width=1, dash="dash"),
+            ))
+            fig.update_layout(
+                height=250,
+                margin=dict(l=0, r=0, t=30, b=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#9fa8da"),
+                xaxis_title="Elapsed (s)",
+                yaxis_title="Score",
+                yaxis_range=[0, 1],
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            st.plotly_chart(fig, width='stretch')
+
+        # --- Active flags --------------------------------------------------- #
+        if status["flags"]:
+            st.markdown("**Active Flags:**")
+            for flag in status["flags"]:
+                sev = flag["severity"].upper()
+                icon = {"CRITICAL": "🔴", "WARNING": "🟡", "INFO": "🔵"}.get(sev, "⚪")
+                st.warning(f"{icon} [{sev}] **{flag['source']}** — {flag['rationale']}")
+        else:
+            st.success("No active flags.")
+
+        # --- Evidence log --------------------------------------------------- #
+        evidence = status.get("evidence_log", [])
+        if evidence:
+            with st.expander("📜 Recent Evidence (last 10)", expanded=False):
+                for ep in reversed(evidence):
+                    icon = "+" if ep["delta_log_odds"] > 0 else "−"
+                    st.markdown(
+                        f"**{ep['source']}** ({ep['axis']}) — "
+                        f"`{icon}{abs(ep['delta_log_odds']):.3f}` log-odds — "
+                        f"conf {ep['confidence']:.2f} — "
+                        f"{ep['rationale']}"
+                    )
 
 
 def main():
