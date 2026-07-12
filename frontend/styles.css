@@ -1344,6 +1344,16 @@ select {
     margin-bottom: 0.25rem;
 }
 
+.verdict-card__section {
+    margin-bottom: 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.verdict-card__section strong {
+    color: var(--text-primary);
+}
+
 /* ── Flagged Segments ──────────────────────────────────────────────────── */
 .flagged-segments {
     margin-top: 1rem;
@@ -1410,6 +1420,215 @@ select {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ── Explainability Panel ────────────────────────────────────────────── */
+.explainability-panel {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.exp-verdict {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.exp-vc {
+    flex: 1;
+    min-width: 140px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    text-align: center;
+}
+
+.exp-vc__label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+}
+
+.exp-vc__level {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+
+.exp-vc__prob {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.exp-vc__count {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.exp-ambiguity {
+    background: rgba(255,213,79,0.08);
+    border: 1px solid var(--accent-yellow);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    color: var(--accent-yellow);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ── Pipeline grid ──────────────────────────────────────────────────── */
+.pipeline-grid {
+    margin-bottom: 1rem;
+}
+
+.pipeline-grid__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.pipeline-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.76rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.pipeline-badge.active {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.pipeline-badge:not(.active) {
+    opacity: 0.5;
+}
+
+.pipeline-badge__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    flex-shrink: 0;
+}
+
+.pipeline-badge:not(.active) .pipeline-badge__dot {
+    background: var(--text-muted);
+}
+
+.pipeline-badge__count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+/* ── Evidence breakdown table ───────────────────────────────────────── */
+.evidence-breakdown {
+    margin-bottom: 1rem;
+}
+
+.ev-breakdown-table {
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+}
+
+.ev-bd-row {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgba(42,47,79,0.3);
+    gap: 0.5rem;
+}
+
+.ev-bd-row:last-child { border-bottom: none; }
+
+.ev-bd-row__source {
+    flex: 0 0 150px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.ev-bd-row__count {
+    flex: 0 0 30px;
+    text-align: right;
+    font-weight: 700;
+}
+
+.ev-bd-row__deltas {
+    flex: 1;
+    display: flex;
+    gap: 0.35rem;
+}
+
+.ev-bd-row__delta {
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+}
+
+.ev-bd-row__delta.id { background: rgba(102,187,106,0.15); color: var(--accent-green); }
+.ev-bd-row__delta.auth { background: rgba(255,167,38,0.15); color: var(--accent-orange); }
+
+/* ── Top contributors ───────────────────────────────────────────────── */
+.top-contributors { margin-bottom: 0.5rem; }
+
+.top-contributor {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgba(42,47,79,0.3);
+    font-size: 0.78rem;
+}
+
+.top-contributor:last-child { border-bottom: none; }
+
+.top-contributor__rank {
+    flex: 0 0 18px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.top-contributor__source {
+    flex: 0 0 100px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.top-contributor__delta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.top-contributor__rationale {
+    flex: 1;
+    color: var(--text-secondary);
 }
 
 /* ── Status colors ─────────────────────────────────────────────────────── */

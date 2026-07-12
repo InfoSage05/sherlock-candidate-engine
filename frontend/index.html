@@ -186,6 +186,49 @@
                 <div class="card__header"><span class="card__header-icon">🚩</span> Flagged Speech Segments</div>
                 <div id="flaggedSegmentsList"></div>
             </div>
+
+            <!-- Explainability Panel: why this candidate, what evidence supports it -->
+            <div class="explainability-panel" id="explainabilityPanel" style="display:none;">
+                <div class="card__header"><span class="card__header-icon">🔍</span> Why This Candidate?</div>
+
+                <div class="explainability-summary" id="expSummary">
+                    <div class="exp-verdict">
+                        <div class="exp-vc exp-vc--identity">
+                            <div class="exp-vc__label">Identity</div>
+                            <div class="exp-vc__level" id="expIdLevel">—</div>
+                            <div class="exp-vc__prob" id="expIdProb">—</div>
+                        </div>
+                        <div class="exp-vc exp-vc--authenticity">
+                            <div class="exp-vc__label">Authenticity</div>
+                            <div class="exp-vc__level" id="expAuthLevel">—</div>
+                            <div class="exp-vc__prob" id="expAuthProb">—</div>
+                        </div>
+                        <div class="exp-vc exp-vc--flags">
+                            <div class="exp-vc__label">Active Flags</div>
+                            <div class="exp-vc__count" id="expFlagCount">0</div>
+                        </div>
+                    </div>
+                    <div class="exp-ambiguity" id="expAmbiguity" style="display:none;"></div>
+                </div>
+
+                <!-- Pipeline status: which signals contribute -->
+                <div class="pipeline-grid" id="pipelineGrid">
+                    <div class="card__subtitle">Active Signal Pipelines</div>
+                    <div class="pipeline-grid__items" id="pipelineItems"></div>
+                </div>
+
+                <!-- Evidence breakdown by source -->
+                <div class="evidence-breakdown" id="evidenceBreakdown">
+                    <div class="card__subtitle">Evidence Breakdown by Source</div>
+                    <div class="ev-breakdown-table" id="evBreakdownTable"></div>
+                </div>
+
+                <!-- Top contributors -->
+                <div class="top-contributors" id="topContributors">
+                    <div class="card__subtitle">Top Contributing Signals</div>
+                    <div id="topContributorsList"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Scoreboard -->

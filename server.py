@@ -109,6 +109,129 @@ def get_signal_category(source: SignalSource) -> str:
     return "Other"
 
 
+def _build_explainability(engine, top_id: str, participant: Dict, sess=None) -> Dict:
+    """Build a rich explainability payload for the current live snapshot."""
+    from collections import defaultdict
+
+    all_eps = engine.evidence_ledger
+
+    # ── Evidence breakdown by source ──────────────────────────────────
+    by_source = defaultdict(lambda: {"count": 0, "total_delta": 0.0, "confidence_sum": 0.0,
+                                      "identity_delta": 0.0, "authenticity_delta": 0.0})
+    for ep in all_eps:
+        s = ep.source.value
+        by_source[s]["count"] += 1
+        by_source[s]["total_delta"] += abs(ep.delta_log_odds)
+        by_source[s]["confidence_sum"] += ep.confidence
+        if ep.axis == SignalAxis.IDENTITY:
+            by_source[s]["identity_delta"] += ep.delta_log_odds
+        else:
+            by_source[s]["authenticity_delta"] += ep.delta_log_odds
+
+    evidence_by_source = {}
+    for src, d in sorted(by_source.items(), key=lambda x: x[1]["total_delta"], reverse=True):
+        d["avg_confidence"] = round(d["confidence_sum"] / d["count"], 3) if d["count"] else 0
+        d["identity_delta"] = round(d["identity_delta"], 3)
+        d["authenticity_delta"] = round(d["authenticity_delta"], 3)
+        d["total_delta"] = round(d["total_delta"], 3)
+        d["category"] = get_signal_category(SignalSource(src))
+        evidence_by_source[src] = d
+
+    # ── Evidence breakdown by category ────────────────────────────────
+    by_cat = defaultdict(lambda: {"count": 0, "total_identity_delta": 0.0, "total_authenticity_delta": 0.0})
+    for ep in all_eps:
+        cat = get_signal_category(ep.source)
+        by_cat[cat]["count"] += 1
+        if ep.axis == SignalAxis.IDENTITY:
+            by_cat[cat]["total_identity_delta"] += ep.delta_log_odds
+        else:
+            by_cat[cat]["total_authenticity_delta"] += ep.delta_log_odds
+
+    evidence_by_category = {}
+    for cat, d in by_cat.items():
+        evidence_by_category[cat] = {
+            "count": d["count"],
+            "identity_delta": round(d["total_identity_delta"], 3),
+            "authenticity_delta": round(d["total_authenticity_delta"], 3),
+        }
+
+    # ── Top contributing evidence ─────────────────────────────────────
+    top_contributors = []
+    for ep in sorted(all_eps[-30:], key=lambda e: abs(e.delta_log_odds), reverse=True)[:8]:
+        top_contributors.append({
+            "source": ep.source.value,
+            "axis": ep.axis.value,
+            "delta_log_odds": round(ep.delta_log_odds, 3),
+            "confidence": round(ep.confidence, 3),
+            "rationale": ep.rationale[:120],
+            "category": get_signal_category(ep.source),
+            "flag_type": ep.flag_type,
+        })
+
+    # ── Pipeline status ───────────────────────────────────────────────
+    orc = sess.orchestrator if sess else None
+    if orc:
+        pipeline_status = {
+            "deepfake_video": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger if ep.source == SignalSource.DEEPFAKE_VIDEO)},
+            "voice_liveness": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger if ep.source == SignalSource.VOICE_LIVENESS)},
+            "gaze_detection": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger if ep.source == SignalSource.GAZE_DETECTION)},
+            "audio_authenticity": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger if ep.source == SignalSource.AI_GENERATED_SPEECH)},
+            "text_authenticity": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger
+                if ep.source in (SignalSource.AI_GENERATED_TEXT, SignalSource.HUMAN_SPONTANEOUS_TEXT,
+                                 SignalSource.READING_PATTERN, SignalSource.UNNATURAL_PAUSE))},
+            "transcription_live": {"active": bool(orc.transcript_segments),
+                                   "evidence_count": len(orc.transcript_segments)},
+            "behavioral_signals": {"active": True, "evidence_count": sum(
+                1 for ep in engine.evidence_ledger
+                if ep.source in (SignalSource.TURN_TAKING, SignalSource.SPEAKING_RATIO))},
+        }
+    else:
+        pipeline_status = {}
+
+    # ── Verdict summary ───────────────────────────────────────────────
+    belief = engine.beliefs.get(top_id)
+    identity_log_odds = belief.identity_log_odds if belief else 0.0
+    auth_log_odds = belief.authenticity_log_odds if belief else 0.0
+    id_prob = participant.get("identity_probability", 0)
+    auth_prob = participant.get("authenticity_probability", 0)
+
+    verdict_summary = {
+        "identity_probability": id_prob,
+        "authenticity_probability": auth_prob,
+        "identity_confidence_level": _confidence_level(id_prob),
+        "authenticity_confidence_level": _confidence_level(auth_prob),
+        "identity_log_odds": round(identity_log_odds, 3),
+        "authenticity_log_odds": round(auth_log_odds, 3),
+        "total_evidence_count": len(all_eps),
+        "identity_evidence_count": len(belief.identity_evidence) if belief else 0,
+        "authenticity_evidence_count": len(belief.authenticity_evidence) if belief else 0,
+        "flags_active": participant.get("flag_count", 0),
+    }
+
+    return {
+        "evidence_by_source": evidence_by_source,
+        "evidence_by_category": evidence_by_category,
+        "top_contributors": top_contributors,
+        "pipeline_status": pipeline_status,
+        "verdict_summary": verdict_summary,
+    }
+
+
+def _confidence_level(prob: float) -> str:
+    if prob >= 0.9:
+        return "high"
+    if prob >= 0.7:
+        return "moderate"
+    if prob >= 0.4:
+        return "low"
+    return "very_low"
+
+
 def serialize_live_snapshot(sess) -> Dict:
     """Convert a LiveSession into the same snapshot shape as replay."""
     if not sess or not sess.engine:
@@ -261,6 +384,7 @@ def serialize_live_snapshot(sess) -> Dict:
         "video_title": status.get("video_title", ""),
         "p95_latency_ms": status.get("p95_latency_ms", 0.0),
         "dropped_non_candidate": status.get("dropped_non_candidate", 0),
+        "explainability": _build_explainability(engine, top_id, participant, sess),
     }
 
 

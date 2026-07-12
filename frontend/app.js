@@ -443,8 +443,9 @@ function updateLiveVideoScores(data) {
         verdictEl.style.color = verdict.color;
     }
 
-    renderVerdictCard(verdict, data.verdict_reasons || []);
+    renderVerdictCard(verdict, data.verdict_reasons || [], data.explainability);
     renderFlaggedSegments(data.flagged_segments || []);
+    renderExplainability(data);
 
     if (elapsedEl) elapsedEl.textContent = formatSeconds(data.elapsed_seconds || 0);
 }
@@ -459,7 +460,7 @@ function computeVerdict(authenticity) {
     return { label: 'Likely Cheating', className: 'cheating', icon: '🚩', color: 'var(--accent-red)' };
 }
 
-function renderVerdictCard(verdict, reasons) {
+function renderVerdictCard(verdict, reasons, explainability) {
     const card = $('#verdictCard');
     const icon = $('#verdictIcon');
     const title = $('#verdictTitle');
@@ -472,13 +473,44 @@ function renderVerdictCard(verdict, reasons) {
     title.textContent = verdict.label;
     title.style.color = verdict.color;
 
-    if (reasons.length === 0) {
-        reasonsEl.innerHTML = '<p>No authenticity concerns detected yet.</p>';
-    } else {
-        reasonsEl.innerHTML = '<ul>' +
-            reasons.slice(-5).map(r => `<li>${escapeHtml(r)}</li>`).join('') +
-            '</ul>';
+    // Build a rich multi-signal summary.
+    const parts = [];
+    const exp = explainability || {};
+
+    // Identity summary: which signals identified the candidate.
+    const idBySrc = exp.evidence_by_source || {};
+    const idSources = Object.entries(idBySrc)
+        .filter(([, d]) => d.identity_delta > 0)
+        .sort((a, b) => b[1].identity_delta - a[1].identity_delta)
+        .slice(0, 3);
+    if (idSources.length) {
+        parts.push('<div class="verdict-card__section"><strong>Identity signals</strong> (how we know who this is): ' +
+            idSources.map(([s, d]) =>
+                `${s.replace(/_/g, ' ')} (+${d.identity_delta.toFixed(1)})`).join(', ') +
+            '</div>');
     }
+
+    // Authenticity summary: signals about the candidate's genuineness.
+    const authSources = Object.entries(idBySrc)
+        .filter(([, d]) => d.authenticity_delta !== 0)
+        .sort((a, b) => Math.abs(b[1].authenticity_delta) - Math.abs(a[1].authenticity_delta))
+        .slice(0, 3);
+    if (authSources.length) {
+        parts.push('<div class="verdict-card__section"><strong>Authenticity signals</strong> (how genuine the answers are): ' +
+            authSources.map(([s, d]) =>
+                `${s.replace(/_/g, ' ')} (${d.authenticity_delta > 0 ? '+' : ''}${d.authenticity_delta.toFixed(1)})`).join(', ') +
+            '</div>');
+    }
+
+    // Recent reasons (authenticity rationale).
+    if (reasons.length > 0) {
+        parts.push('<div class="verdict-card__section"><strong>Recent findings:</strong><ul>' +
+            reasons.slice(-5).map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul></div>');
+    } else if (!parts.length) {
+        parts.push('<p>No authenticity concerns detected yet. Gathering signals…</p>');
+    }
+
+    reasonsEl.innerHTML = parts.join('');
 }
 
 function renderFlaggedSegments(segments) {
@@ -507,6 +539,107 @@ function renderFlaggedSegments(segments) {
         `;
         list.appendChild(div);
     }
+}
+
+function renderExplainability(data) {
+    const panel = $('#explainabilityPanel');
+    if (!panel || !data || !data.explainability) {
+        if (panel) panel.style.display = 'none';
+        return;
+    }
+    panel.style.display = 'block';
+
+    const expl = data.explainability;
+    const vs = expl.verdict_summary || {};
+
+    // ── Verdict cards ──────────────────────────────────────────────
+    const idLevel = $('#expIdLevel');
+    const idProb = $('#expIdProb');
+    const authLevel = $('#expAuthLevel');
+    const authProb = $('#expAuthProb');
+    const flagCount = $('#expFlagCount');
+
+    if (idLevel) { idLevel.textContent = _levelLabel(vs.identity_confidence_level); idLevel.style.color = probColor(vs.identity_probability || 0); }
+    if (idProb) idProb.textContent = ((vs.identity_probability || 0) * 100).toFixed(1) + '%';
+    if (authLevel) { authLevel.textContent = _levelLabel(vs.authenticity_confidence_level); authLevel.style.color = probColor(vs.authenticity_probability || 0); }
+    if (authProb) authProb.textContent = ((vs.authenticity_probability || 0) * 100).toFixed(1) + '%';
+    if (flagCount) { flagCount.textContent = vs.flags_active || 0; flagCount.style.color = (vs.flags_active || 0) > 0 ? 'var(--accent-red)' : 'var(--accent-green)'; }
+
+    // ── Ambiguity warning ──────────────────────────────────────────
+    const ambiguityEl = $('#expAmbiguity');
+    if (ambiguityEl) {
+        if ((data.ambiguity_gap || 0) < 0.25) {
+            ambiguityEl.style.display = 'flex';
+            ambiguityEl.innerHTML = `<span>⚠️</span><span>The top-candidate gap is only ${(data.ambiguity_gap*100).toFixed(1)}%. Identity is uncertain — verify before trusting authenticity flags.</span>`;
+        } else if ((vs.authenticity_probability || 0) < 0.4) {
+            ambiguityEl.style.display = 'flex';
+            ambiguityEl.innerHTML = `<span>⚠️</span><span>Authenticity is low (${((vs.authenticity_probability||0)*100).toFixed(1)}%). The candidate's answers show unusual patterns.</span>`;
+        } else {
+            ambiguityEl.style.display = 'none';
+        }
+    }
+
+    // ── Pipeline status ────────────────────────────────────────────
+    const pipelineItems = $('#pipelineItems');
+    if (pipelineItems && expl.pipeline_status) {
+        pipelineItems.innerHTML = '';
+        const labels = {
+            deepfake_video: 'Deepfake Video',
+            voice_liveness: 'Voice Liveness',
+            gaze_detection: 'Gaze Detection',
+            audio_authenticity: 'Audio Authenticity',
+            text_authenticity: 'Text Authenticity',
+            transcription_live: 'Live Transcription',
+            behavioral_signals: 'Behavioral Signals',
+        };
+        for (const [key, info] of Object.entries(expl.pipeline_status)) {
+            const hasEvidence = (typeof info.active === 'boolean' ? info.active : (info.evidence_count || info.count || 0) > 0);
+            const cls = hasEvidence ? ' active' : '';
+            const dot = hasEvidence ? '<span class="pipeline-badge__dot"></span>' : '';
+            const count = info.evidence_count ? `<span class="pipeline-badge__count">${info.evidence_count}</span>` : '';
+            const div = el('div', { className: `pipeline-badge${cls}`, innerHTML: `${dot}${labels[key] || key}${count}` });
+            pipelineItems.appendChild(div);
+        }
+    }
+
+    // ── Evidence breakdown by source ───────────────────────────────
+    const bdTable = $('#evBreakdownTable');
+    if (bdTable && expl.evidence_by_source) {
+        bdTable.innerHTML = '';
+        const entries = Object.entries(expl.evidence_by_source).slice(0, 12);
+        for (const [src, d] of entries) {
+            const deltaParts = [];
+            if (d.identity_delta !== 0) deltaParts.push(`<span class="ev-bd-row__delta id">ID ${d.identity_delta>0?'+':''}${d.identity_delta.toFixed(2)}</span>`);
+            if (d.authenticity_delta !== 0) deltaParts.push(`<span class="ev-bd-row__delta auth">Auth ${d.authenticity_delta>0?'+':''}${d.authenticity_delta.toFixed(2)}</span>`);
+            const row = el('div', { className: 'ev-bd-row', innerHTML: `
+                <span class="ev-bd-row__source">${src}</span>
+                <span class="ev-bd-row__count">${d.count}</span>
+                <span class="ev-bd-row__deltas">${deltaParts.join('')}</span>
+            ` });
+            bdTable.appendChild(row);
+        }
+    }
+
+    // ── Top contributors ───────────────────────────────────────────
+    const topList = $('#topContributorsList');
+    if (topList && expl.top_contributors) {
+        topList.innerHTML = '';
+        expl.top_contributors.slice(0, 5).forEach((tc, idx) => {
+            const deltaColor = tc.delta_log_odds >= 0 ? 'color-green' : 'color-red';
+            const row = el('div', { className: 'top-contributor', innerHTML: `
+                <span class="top-contributor__rank">#${idx + 1}</span>
+                <span class="top-contributor__source">${tc.source}</span>
+                <span class="top-contributor__delta ${deltaColor}">${tc.delta_log_odds > 0 ? '+' : ''}${tc.delta_log_odds.toFixed(2)}</span>
+                <span class="top-contributor__rationale">${escapeHtml(tc.rationale || '')}</span>
+            ` });
+            topList.appendChild(row);
+        });
+    }
+}
+
+function _levelLabel(level) {
+    const m = { high: 'HIGH', moderate: 'MODERATE', low: 'LOW', very_low: 'VERY LOW' };
+    return m[level] || level || '—';
 }
 
 function escapeHtml(str) {
