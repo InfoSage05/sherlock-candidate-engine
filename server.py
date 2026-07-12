@@ -616,8 +616,10 @@ async def start_live(req: LiveStartRequest):
     if not _LIVE_AVAILABLE:
         raise HTTPException(status_code=503, detail="Live analysis dependencies not available")
 
+    # If a session is already running, stop it cleanly so the new video takes over.
     if state.live_session and state.live_session.running:
-        raise HTTPException(status_code=409, detail="A live session is already running")
+        state.live_session.stop()
+        state.live_session = None
 
     # Resolve uploaded file by token if provided.
     file_path = req.file_path or None

@@ -1,13 +1,9 @@
-INFO:     Started server process [6661]
+INFO:     Started server process [7931]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:41176 - "WebSocket /ws/replay" [accepted]
-INFO:server:WebSocket /ws/replay connected
-INFO:     connection open
-INFO:     127.0.0.1:56942 - "GET /api/live/available HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56952 - "POST /api/live/upload HTTP/1.1" 200 OK
-[0;93m2026-07-12 08:52:52.668707808 [W:onnxruntime:Default, device_discovery.cc:283 GetGpuDevices] Failed to detect devices under "/sys/class/drm/card0": device_discovery.cc:93 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO:     127.0.0.1:60922 - "GET /api/live/available HTTP/1.1" 200 OK
+[0;93m2026-07-12 12:45:59.604895104 [W:onnxruntime:Default, device_discovery.cc:283 GetGpuDevices] Failed to detect devices under "/sys/class/drm/card0": device_discovery.cc:93 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
 INFO:sherlock.orchestrator:Sentence-transformers not available: Could not load libtorchcodec. Likely causes:
           1. FFmpeg is not properly installed in your environment. We support
              versions 4, 5, 6, 7, and 8, and we attempt to load libtorchcodec
@@ -114,140 +110,44 @@ Traceback (most recent call last):
     raise OSError(f"Could not load this library: {path}") from e
 OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core4.so
 [end of libtorchcodec loading traceback].
-INFO:     127.0.0.1:56792 - "POST /api/live/start HTTP/1.1" 200 OK
-INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783846365_interview_2min.mp4
+INFO:     127.0.0.1:53650 - "POST /api/live/start HTTP/1.1" 200 OK
+INFO:sherlock.ingestion.file:FileSource opened /mnt/e/Machine Learning/ML Assignment/test_videos/interview_2min.mp4
 INFO:sherlock.orchestrator:Orchestrator started.
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/agent-harnesses "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
-[2026-07-12 08:53:01.929] [ctranslate2] [thread 6770] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
+INFO:     127.0.0.1:58046 - "GET /api/live/info HTTP/1.1" 200 OK
+[2026-07-12 12:46:23.011] [ctranslate2] [thread 8036] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
 INFO:faster_whisper:Processing audio with duration 00:02.019
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:sherlock.pipelines.ai_text_detector:Loading AI-text detector: roberta-base-openai-detector
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  63%|██████▎   | 126/201 [00:00<00:00, 1257.33it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1343.78it/s]
+[transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 2028.63it/s]
-[transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
-Key                         | Status     |  | 
-----------------------------+------------+--+-
-roberta.pooler.dense.bias   | UNEXPECTED |  | 
-roberta.pooler.dense.weight | UNEXPECTED |  | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:     127.0.0.1:54748 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:     127.0.0.1:50944 - "GET /api/live/status HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     127.0.0.1:48512 - "WebSocket /ws/replay" [accepted]
-INFO:server:WebSocket /ws/replay connected
-INFO:     connection open
-INFO:     127.0.0.1:51474 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51474 - "GET /static/styles.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51474 - "GET /static/app.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51474 - "GET /api/scenarios HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51482 - "GET /api/live/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51482 - "GET /api/live/video HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     127.0.0.1:51500 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
-INFO:     127.0.0.1:51484 - "POST /api/live/stop HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     127.0.0.1:51484 - "POST /api/replay/load HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51484 - "GET /api/replay/snapshot HTTP/1.1" 200 OK
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:49548 - "WebSocket /ws/replay" [accepted]
-INFO:server:WebSocket /ws/replay connected
-INFO:     connection open
-INFO:     127.0.0.1:52542 - "POST /api/live/stop HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     127.0.0.1:38342 - "WebSocket /ws/replay" [accepted]
-INFO:server:WebSocket /ws/replay connected
-INFO:     connection open
-INFO:     connection closed
-INFO:     127.0.0.1:57094 - "WebSocket /ws/replay" [accepted]
-INFO:server:WebSocket /ws/replay connected
-INFO:     connection open
-/home/ayushman/.local/lib/python3.12/site-packages/uvicorn/protocols/websockets/websockets_impl.py:347: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
-  async def asgi_receive(self) -> WebSocketDisconnectEvent | WebSocketConnectEvent | WebSocketReceiveEvent:
-RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-ERROR:asyncio:Task was destroyed but it is pending!
-task: <Task pending name='Task-39' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
-INFO:     127.0.0.1:52596 - "POST /api/live/upload HTTP/1.1" 200 OK
 INFO:sherlock.orchestrator:Sentence-transformers not available: Could not load libtorchcodec. Likely causes:
           1. FFmpeg is not properly installed in your environment. We support
              versions 4, 5, 6, 7, and 8, and we attempt to load libtorchcodec
@@ -354,24 +254,26 @@ Traceback (most recent call last):
     raise OSError(f"Could not load this library: {path}") from e
 OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core4.so
 [end of libtorchcodec loading traceback].
-INFO:     127.0.0.1:52596 - "POST /api/live/start HTTP/1.1" 200 OK
-INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783852801_interview_esl_1min.mp4
+INFO:     127.0.0.1:44660 - "POST /api/live/start HTTP/1.1" 200 OK
+INFO:sherlock.ingestion.file:FileSource opened /mnt/e/Machine Learning/ML Assignment/test_videos/interview_esl_1min.mp4
 INFO:sherlock.orchestrator:Orchestrator started.
-INFO:     127.0.0.1:52596 - "GET /api/live/video HTTP/1.1" 206 Partial Content
-INFO:     127.0.0.1:52622 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
-[2026-07-12 10:40:03.033] [ctranslate2] [thread 7130] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
+[2026-07-12 12:46:39.064] [ctranslate2] [thread 8161] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
 INFO:faster_whisper:Processing audio with duration 00:02.019
+/mnt/e/Machine Learning/ML Assignment/sherlock/ingestion/file.py:126: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
+  resampled_frames = self._resampler.resample(frame)
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-13' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
 INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     127.0.0.1:57020 - "GET /api/live/info HTTP/1.1" 200 OK
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:sherlock.pipelines.ai_text_detector:Loading AI-text detector: roberta-base-openai-detector
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/config.json "HTTP/1.1 200 OK"
-Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  33%|███▎      | 66/201 [00:00<00:00, 652.00it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1016.39it/s]
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  41%|████▏     | 83/201 [00:00<00:00, 825.65it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1127.66it/s]
 [transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
 Key                         | Status     |  | 
 ----------------------------+------------+--+-
@@ -381,6 +283,7 @@ roberta.pooler.dense.weight | UNEXPECTED |  |
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+INFO:     127.0.0.1:57022 - "GET /api/live/video HTTP/1.1" 200 OK
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
@@ -394,6 +297,7 @@ INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     127.0.0.1:59778 - "POST /api/live/upload HTTP/1.1" 200 OK
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
@@ -401,79 +305,6 @@ INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:     127.0.0.1:58834 - "GET /api/live/status HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:39546 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
-INFO:     127.0.0.1:39552 - "POST /api/feedback/correct HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:59048 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     connection closed
-INFO:     127.0.0.1:33446 - "GET /api/live/available HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET / HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET /static/styles.css HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET /static/app.js HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET /api/scenarios HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48190 - "GET /api/live/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52624 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:48190 - "GET /api/scenarios HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET /api/live/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48180 - "GET /api/live/video HTTP/1.1" 206 Partial Content
-INFO:     127.0.0.1:52626 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
-INFO:     127.0.0.1:58670 - "GET /api/live/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48198 - "POST /api/live/stop HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:38354 - "POST /api/live/upload HTTP/1.1" 200 OK
-/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_core/_metadata.py:15: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
-  from torchcodec._core.ops import (
-RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-ERROR:asyncio:Task was destroyed but it is pending!
-task: <Task pending name='Task-102' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
 INFO:sherlock.orchestrator:Sentence-transformers not available: Could not load libtorchcodec. Likely causes:
           1. FFmpeg is not properly installed in your environment. We support
              versions 4, 5, 6, 7, and 8, and we attempt to load libtorchcodec
@@ -580,20 +411,26 @@ Traceback (most recent call last):
     raise OSError(f"Could not load this library: {path}") from e
 OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core4.so
 [end of libtorchcodec loading traceback].
-INFO:     127.0.0.1:38354 - "POST /api/live/start HTTP/1.1" 200 OK
-INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783859799_interview_2min.mp4
+INFO:     127.0.0.1:48502 - "POST /api/live/start HTTP/1.1" 200 OK
+INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783860417_interview_dialogue_2min.mp4
 INFO:sherlock.orchestrator:Orchestrator started.
-INFO:     127.0.0.1:38370 - "WebSocket /ws/live" [accepted]
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
-[2026-07-12 12:36:41.484] [ctranslate2] [thread 7608] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
+[2026-07-12 12:47:06.139] [ctranslate2] [thread 8288] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
 INFO:faster_whisper:Processing audio with duration 00:02.019
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     127.0.0.1:48506 - "GET /api/live/info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48516 - "GET /api/live/video HTTP/1.1" 200 OK
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-21' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:sherlock.pipelines.ai_text_detector:Loading AI-text detector: roberta-base-openai-detector
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/config.json "HTTP/1.1 200 OK"
-Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  65%|██████▍   | 130/201 [00:00<00:00, 1290.20it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1662.81it/s]
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  67%|██████▋   | 134/201 [00:00<00:00, 1338.54it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1424.25it/s]
 [transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
 Key                         | Status     |  | 
 ----------------------------+------------+--+-
@@ -610,10 +447,17 @@ INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detecto
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
 INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
 INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:     127.0.0.1:38364 - "POST /api/live/stop HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:server:WebSocket /ws/live disconnected
-INFO:     127.0.0.1:38364 - "POST /api/live/upload HTTP/1.1" 200 OK
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:sherlock.live:Downloading YouTube video: https://www.youtube.com/watch?v=aqz-KE-bpKQ
+INFO:sherlock.ingestion.youtube:Downloading YouTube video: https://www.youtube.com/watch?v=aqz-KE-bpKQ
+INFO:sherlock.ingestion.youtube:Downloaded 'Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film' (635s) -> /tmp/sherlock_yt_cache/ab8cf6bcf09a7d53.mp4
+INFO:sherlock.live:Downloaded: Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film -> /tmp/sherlock_yt_cache/ab8cf6bcf09a7d53.mp4
 INFO:sherlock.orchestrator:Sentence-transformers not available: Could not load libtorchcodec. Likely causes:
           1. FFmpeg is not properly installed in your environment. We support
              versions 4, 5, 6, 7, and 8, and we attempt to load libtorchcodec
@@ -720,40 +564,19 @@ Traceback (most recent call last):
     raise OSError(f"Could not load this library: {path}") from e
 OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core4.so
 [end of libtorchcodec loading traceback].
-INFO:     127.0.0.1:38364 - "POST /api/live/start HTTP/1.1" 200 OK
-INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783859811_interview_2min.mp4
+INFO:     127.0.0.1:37294 - "POST /api/live/start HTTP/1.1" 200 OK
+INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_yt_cache/ab8cf6bcf09a7d53.mp4
 INFO:sherlock.orchestrator:Orchestrator started.
-/usr/lib/python3.12/asyncio/queues.py:175: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
-  def get_nowait(self):
+/mnt/e/Machine Learning/ML Assignment/sherlock/ingestion/file.py:118: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
+  img = frame.to_ndarray(format="rgb24")
 RuntimeWarning: Enable tracemalloc to get the object allocation traceback
 ERROR:asyncio:Task was destroyed but it is pending!
-task: <Task pending name='Task-114' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
-INFO:     127.0.0.1:43862 - "WebSocket /ws/live" [accepted]
+task: <Task pending name='Task-25' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
 INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
-INFO:server:WebSocket /ws/live connected
-INFO:     connection open
-[2026-07-12 12:36:51.895] [ctranslate2] [thread 7653] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
+[2026-07-12 13:04:08.627] [ctranslate2] [thread 8398] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
 INFO:faster_whisper:Processing audio with duration 00:02.019
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
-INFO:sherlock.pipelines.ai_text_detector:Loading AI-text detector: roberta-base-openai-detector
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/config.json "HTTP/1.1 200 OK"
-Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  39%|███▉      | 79/201 [00:00<00:00, 786.68it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1031.95it/s]
-[transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
-Key                         | Status     |  | 
-----------------------------+------------+--+-
-roberta.pooler.dense.bias   | UNEXPECTED |  | 
-roberta.pooler.dense.weight | UNEXPECTED |  | 
-
-Notes:
-- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
-INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
-INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
@@ -791,6 +614,134 @@ INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-11' coro=<RealtimeInferenceOrchestrator._ingest_loop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:117> wait_for=<Future finished result=SegmentAnalys... rationale='')>>
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-12' coro=<RealtimeInferenceOrchestrator._candidate_loop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:141> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+ERROR:sherlock.orchestrator:Candidate loop crashed: Event loop is closed
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-19' coro=<RealtimeInferenceOrchestrator._ingest_loop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:117> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.12/asyncio/futures.py:387, Task.task_wakeup()]>>
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-20' coro=<RealtimeInferenceOrchestrator._candidate_loop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:141> wait_for=<Future pending cb=[Task.task_wakeup()]>>
+ERROR:sherlock.orchestrator:Candidate loop crashed: Event loop is closed
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     127.0.0.1:50080 - "POST /api/live/stop HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50080 - "POST /api/replay/load HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50080 - "GET /api/replay/snapshot HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50106 - "WebSocket /ws/replay" [accepted]
+INFO:server:WebSocket /ws/replay connected
+INFO:     connection open
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020
 INFO:faster_whisper:Processing audio with duration 00:02.020

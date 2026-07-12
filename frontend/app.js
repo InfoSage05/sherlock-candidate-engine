@@ -199,6 +199,13 @@ async function startLive() {
         return;
     }
 
+    // Stop any previous session so the new video always takes over.
+    if (appState.liveMode || appState.liveRunning) {
+        await stopLive();
+        // Brief pause to let the backend release the file/socket.
+        await new Promise(r => setTimeout(r, 500));
+    }
+
     let body = { candidate_name: candidateName };
 
     const startBtn = $('#liveStartBtn');
@@ -294,7 +301,10 @@ function setupLiveVideo(url, title) {
     if (!panel || !video) return;
 
     panel.style.display = 'block';
-    video.src = url;
+    // Cache-bust so the browser fetches the newly selected video
+    // instead of reusing the previous /api/live/video payload.
+    const cacheBusted = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+    video.src = cacheBusted;
     video.load();
 
     // Play once metadata is loaded so duration is available.
