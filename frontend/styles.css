@@ -1180,6 +1180,19 @@ select {
     border-color: var(--border-color);
 }
 
+.processing-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(92, 107, 192, 0.12);
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue-l);
+    font-size: 0.85rem;
+}
+
 .video-wrapper {
     position: relative;
     width: 100%;

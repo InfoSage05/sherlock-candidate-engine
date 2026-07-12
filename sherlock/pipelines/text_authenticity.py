@@ -1,391 +1,301 @@
-"""Text-level authenticity pipeline.
+"""Text-level authenticity pipeline (advanced version).
 
-Analyses transcript segments to detect signatures of:
-1. AI-generated / LLM-drafted text being read aloud.
-2. Reading from a hidden screen / phone (reading pattern).
-3. Unnatural pause placement combined with polished output.
+Analyses candidate answers to detect:
+1. AI-generated / LLM-drafted text (open-source transformer detector).
+2. Generic / scripted / non-responsive answers.
+3. Unnatural pause + polished-answer pattern.
 
-The pipeline emits EvidencePacket objects on the AUTHENTICITY axis.  It is
-intentionally conservative: no single signal is treated as a verdict; all
-signals are fused as weak log-odds updates in the FusionEngine.
+Heavy transformer inference is run in a background thread pool so it does not
+block the real-time audio/video ingestion loop.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import re
 from collections import deque
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Deque, Dict, List, Optional
 
-from ..models import EvidencePacket, FlagSeverity, MeetingContext, SignalAxis, SignalSource, TranscriptSegment
+from ..models import EvidencePacket, FlagSeverity, SignalAxis, SignalSource, TranscriptSegment
+from .ai_text_detector import AITextDetector
 
 logger = logging.getLogger(__name__)
 
-# Common AI/LLM filler phrases and overly formal transitions.
-AI_FORMAL_TRIGGERS = {
-    "it is important to note", "it is worth noting", "it should be noted",
-    "in conclusion", "furthermore", "moreover", "consequently", "therefore",
-    "thus", "hence", "nonetheless", "nevertheless", "in summary", "to summarize",
-    "overall", "as a result", "for instance", "for example", "additionally",
-    "on the other hand", "in order to", "due to the fact that", "in the event that",
-    "with respect to", "with regard to", "it is evident that", "it is clear that",
-    "one could argue that", "it can be argued that", "the aforementioned",
+# Phrases that are normal in interviews and should NOT trigger AI flags.
+INTERVIEW_COMMON_PHRASES = {
+    "thank you", "thanks", "nice to meet you", "good luck",
+    "do you have any questions", "do you have any other questions",
+    "i don't think so", "no, i don't think so", "not that i can think of",
+    "that's a good question", "that's an interesting question",
+    "i'm not sure", "i don't know", "could you repeat",
+    "yes, exactly", "absolutely", "definitely", "of course",
+    "i would say", "i think", "i believe", "in my opinion",
 }
 
-# Transitions that often appear when a speaker is reading bullets.
-READING_TRANSITIONS = {
-    "first", "second", "third", "fourth", "fifth", "firstly", "secondly",
-    "thirdly", "next", "then", "finally", "lastly", "moving on", "going back",
-    "as mentioned", "as previously stated", "referring back",
-}
-
-FILLER_WORDS = {
-    "um", "uh", "er", "ah", "like", "you know", "i mean", "sort of", "kind of",
+# Generic filler phrases that indicate a memorised / non-specific answer.
+GENERIC_ANSWER_MARKERS = {
+    "hardworking", "team player", "passionate", "detail-oriented",
+    "fast learner", "good communicator", "problem solver", "self-starter",
+    "go above and beyond", "think outside the box", "synergy", "leverage",
+    "proven track record", "results-driven", "dynamic environment",
 }
 
 
 @dataclass
-class SegmentAuthenticity:
-    """Result of analysing a single transcript segment."""
+class SegmentAnalysis:
     segment: TranscriptSegment
     ai_score: float = 0.0
-    reading_score: float = 0.0
+    generic_score: float = 0.0
     pause_score: float = 0.0
+    relevance_score: float = 1.0
+    is_answer: bool = False
     rationale: str = ""
 
 
 class TextAuthenticityPipeline:
-    """Detect AI-generated or read-aloud transcript segments.
-
-    Parameters
-    ----------
-    context : MeetingContext
-    llm_client : optional LLM client for an additional weak signal.
-    window_size : int
-        Number of recent segments to keep for baseline computation.
-    """
+    """Advanced text authenticity pipeline."""
 
     def __init__(
         self,
-        context: Optional[MeetingContext] = None,
-        llm_client=None,
-        window_size: int = 20,
+        context: Optional[object] = None,
+        ai_detector: Optional[AITextDetector] = None,
+        semantic_model=None,
+        window_size: int = 30,
+        max_workers: int = 1,
     ) -> None:
         self.context = context
-        self.llm_client = llm_client
+        self.ai_detector = ai_detector or AITextDetector()
+        self.semantic_model = semantic_model
         self._segments: Deque[TranscriptSegment] = deque(maxlen=window_size)
-        self._participant_segments: Dict[str, Deque[TranscriptSegment]] = {}
+        self._candidate_ai_scores: List[float] = []
         self._last_segment_end: Dict[str, datetime] = {}
+        self._last_question: Optional[TranscriptSegment] = None
+        self._model_load_error: bool = False
+        self._executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="txt_auth")
 
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
-    def process(self, segment: TranscriptSegment) -> List[EvidencePacket]:
-        """Analyse a new transcript segment and return evidence packets."""
+    async def aprocess(self, segment: TranscriptSegment) -> List[EvidencePacket]:
+        """Async entry point.  Heavy inference runs in a thread pool."""
         self._segments.append(segment)
-        pid = segment.participant_id
-        if pid not in self._participant_segments:
-            self._participant_segments[pid] = deque(maxlen=self._segments.maxlen)
-        self._participant_segments[pid].append(segment)
+
+        if segment.is_question:
+            self._last_question = segment
+            return []
+
+        analysis = await asyncio.get_event_loop().run_in_executor(
+            self._executor, self._analyse_answer, segment
+        )
+        if not analysis.is_answer:
+            return []
 
         packets: List[EvidencePacket] = []
-        packets.extend(self._detect_ai_generated_text(segment, pid))
-        packets.extend(self._detect_reading_pattern(segment, pid))
-        packets.extend(self._detect_unnatural_pause(segment, pid))
+        ai_packet = self._build_ai_packet(analysis)
+        if ai_packet:
+            packets.append(ai_packet)
 
-        # Optional LLM-based weak signal (not a verdict).
-        llm_packet = self._llm_ai_signal(segment, pid)
-        if llm_packet:
-            packets.append(llm_packet)
+        generic_packet = self._build_generic_packet(analysis)
+        if generic_packet:
+            packets.append(generic_packet)
 
-        self._last_segment_end[pid] = segment.end_time
+        pause_packet = self._build_pause_packet(analysis, segment)
+        if pause_packet:
+            packets.append(pause_packet)
+
+        self._last_segment_end[segment.participant_id] = segment.end_time
+        return packets
+
+    def process(self, segment: TranscriptSegment) -> List[EvidencePacket]:
+        """Synchronous fallback (runs inference on calling thread)."""
+        self._segments.append(segment)
+        if segment.is_question:
+            self._last_question = segment
+            return []
+
+        analysis = self._analyse_answer(segment)
+        if not analysis.is_answer:
+            return []
+
+        packets: List[EvidencePacket] = []
+        ai_packet = self._build_ai_packet(analysis)
+        if ai_packet:
+            packets.append(ai_packet)
+        generic_packet = self._build_generic_packet(analysis)
+        if generic_packet:
+            packets.append(generic_packet)
+        pause_packet = self._build_pause_packet(analysis, segment)
+        if pause_packet:
+            packets.append(pause_packet)
+
+        self._last_segment_end[segment.participant_id] = segment.end_time
         return packets
 
     # ------------------------------------------------------------------ #
-    # Heuristic: AI-generated text
+    # Analysis helpers
     # ------------------------------------------------------------------ #
-    def _detect_ai_generated_text(
-        self, segment: TranscriptSegment, participant_id: str
-    ) -> List[EvidencePacket]:
+    def _analyse_answer(self, segment: TranscriptSegment) -> SegmentAnalysis:
         text = segment.text.strip()
-        if not text:
-            return []
-
         lower = text.lower()
         words = re.sub(r"[^\w\s']", " ", lower).split()
-        if not words:
-            return []
 
-        # 1. Overly formal / AI transition density.
-        formal_hits = sum(1 for phrase in AI_FORMAL_TRIGGERS if phrase in lower)
-        formal_density = formal_hits / max(len(words) / 30.0, 1.0)
+        if len(words) < 6:
+            return SegmentAnalysis(segment=segment, is_answer=False)
 
-        # 2. Uniform sentence length (low coefficient of variation).
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        sent_cv = self._coefficient_of_variation([len(s.split()) for s in sentences])
+        analysis = SegmentAnalysis(segment=segment, is_answer=True)
 
-        # 3. Low first-person / personal anecdote density.
-        first_person = sum(1 for w in words if w in {"i", "my", "me", "myself"})
-        personal_density = first_person / len(words)
+        try:
+            if not self._model_load_error:
+                ai_score, _ = self.ai_detector.predict(text)
+                analysis.ai_score = ai_score
+        except Exception as exc:
+            logger.warning("AI-text detector failed: %s", exc)
+            self._model_load_error = True
 
-        # 4. Absence of disfluencies (reading polished text).
-        disfluency_rate = self._disfluency_rate(text)
+        generic_hits = sum(1 for marker in GENERIC_ANSWER_MARKERS if marker in lower)
+        analysis.generic_score = min(1.0, generic_hits / 3.0)
 
-        # Composite heuristic score in [0, 1].
-        score = min(1.0, max(0.0,
-            formal_density * 0.35
-            + (1.0 - min(1.0, sent_cv / 0.5)) * 0.20
-            + (1.0 - min(1.0, personal_density / 0.08)) * 0.20
-            + (1.0 - min(1.0, disfluency_rate / 0.03)) * 0.25
-        ))
+        if self._last_question and self.semantic_model is not None:
+            try:
+                analysis.relevance_score = self._semantic_similarity(
+                    self._last_question.text, text
+                )
+            except Exception as exc:
+                logger.debug("Semantic similarity failed: %s", exc)
 
-        if score < 0.45:
-            return []
+        return analysis
 
-        confidence = min(0.95, score)
-        delta = -(score - 0.4) * 2.0
-        severity = FlagSeverity.CRITICAL if score > 0.8 else FlagSeverity.WARNING
+    # ------------------------------------------------------------------ #
+    # Signal builders
+    # ------------------------------------------------------------------ #
+    def _build_ai_packet(self, analysis: SegmentAnalysis) -> Optional[EvidencePacket]:
+        text = analysis.segment.text.strip()
+        lower = text.lower()
 
-        reasons = []
-        if formal_density > 0.3:
-            reasons.append("overly formal / AI-like transitions")
-        if sent_cv < 0.35 and len(sentences) > 2:
-            reasons.append("uniform sentence length")
-        if personal_density < 0.03 and len(words) > 20:
-            reasons.append("low personal language")
-        if disfluency_rate < 0.005 and len(words) > 20:
-            reasons.append("unnaturally polished delivery")
+        if any(phrase in lower for phrase in INTERVIEW_COMMON_PHRASES):
+            return None
 
-        rationale = (
-            f"Segment shows AI-generated / read-aloud signatures "
-            f"({', '.join(reasons) or 'weak combined cues'}). "
-            f"Score={score:.2f}"
-        )
+        ai_score = analysis.ai_score
+        if ai_score < 0.75:
+            return None
 
-        return [EvidencePacket(
+        baseline = self._candidate_baseline_ai()
+        if baseline > 0.5 and ai_score < 0.85:
+            return None
+
+        combined = ai_score
+        if analysis.generic_score > 0.3:
+            combined = min(1.0, combined + 0.1)
+        if analysis.relevance_score < 0.25:
+            combined = min(1.0, combined + 0.15)
+
+        self._candidate_ai_scores.append(ai_score)
+
+        severity = FlagSeverity.CRITICAL if combined > 0.9 else FlagSeverity.WARNING
+        delta = -(combined - 0.6) * 2.5
+
+        return EvidencePacket(
             source=SignalSource.AI_GENERATED_TEXT,
             axis=SignalAxis.AUTHENTICITY,
-            target_participant_id=participant_id,
+            target_participant_id=analysis.segment.participant_id,
             delta_log_odds=delta,
-            confidence=confidence,
+            confidence=min(0.95, combined),
             severity=severity,
             flag_type="ai_generated_text",
-            recommendation="Verify the candidate is answering spontaneously, not reading generated text.",
-            rationale=rationale,
-            timestamp=segment.start_time,
+            recommendation="This answer has strong AI-generated text signatures. Verify spontaneity.",
+            rationale=(
+                f"Transformer detector score {ai_score:.2f} "
+                f"(baseline {baseline:.2f}); answer shows AI-generated signatures."
+            ),
+            timestamp=analysis.segment.start_time,
             metadata={
-                "ai_score": round(score, 4),
-                "formal_density": round(formal_density, 4),
-                "sentence_cv": round(sent_cv, 4),
-                "personal_density": round(personal_density, 4),
-                "disfluency_rate": round(disfluency_rate, 4),
+                "ai_score": round(ai_score, 4),
+                "baseline_ai": round(baseline, 4),
+                "generic_score": round(analysis.generic_score, 4),
+                "relevance_score": round(analysis.relevance_score, 4),
                 "segment_text": text[:200],
+                "model": getattr(self.ai_detector, "model_name", "unknown"),
             },
-        )]
-
-    # ------------------------------------------------------------------ #
-    # Heuristic: reading pattern (read from screen / phone)
-    # ------------------------------------------------------------------ #
-    def _detect_reading_pattern(
-        self, segment: TranscriptSegment, participant_id: str
-    ) -> List[EvidencePacket]:
-        text = segment.text.strip()
-        if not text:
-            return []
-
-        lower = text.lower()
-        words = re.sub(r"[^\w\s']", " ", lower).split()
-        if len(words) < 5:
-            return []
-
-        # Reading cues: enumerated transitions, repeated exact phrases, low filler rate.
-        reading_transitions = sum(1 for w in words if w in READING_TRANSITIONS)
-        transition_density = reading_transitions / len(words)
-
-        # Repeated phrase within segment (copy-pasted bullets read aloud).
-        repeated_score = self._repeated_phrase_score(text)
-
-        # Polished + enumerations strongly suggests reading.
-        disfluency_rate = self._disfluency_rate(text)
-
-        score = min(1.0, max(0.0,
-            transition_density * 2.5 * 0.35
-            + repeated_score * 0.35
-            + (1.0 - min(1.0, disfluency_rate / 0.03)) * 0.30
-        ))
-
-        if score < 0.45:
-            return []
-
-        confidence = min(0.9, score)
-        delta = -(score - 0.4) * 1.8
-        severity = FlagSeverity.WARNING
-
-        reasons = []
-        if transition_density > 0.08:
-            reasons.append("enumerated transitions")
-        if repeated_score > 0.3:
-            reasons.append("repeated phrasing")
-        if disfluency_rate < 0.005 and len(words) > 15:
-            reasons.append("low disfluency while reading-like")
-
-        rationale = (
-            f"Delivery pattern suggests reading from another screen "
-            f"({', '.join(reasons)}). Score={score:.2f}"
         )
 
-        return [EvidencePacket(
+    def _build_generic_packet(self, analysis: SegmentAnalysis) -> Optional[EvidencePacket]:
+        if analysis.generic_score < 0.4:
+            return None
+
+        text = analysis.segment.text
+        has_specifics = bool(re.search(r"\b\d+\b", text)) or "for example" in text.lower() or "instance" in text.lower()
+        if has_specifics:
+            return None
+
+        return EvidencePacket(
             source=SignalSource.READING_PATTERN,
             axis=SignalAxis.AUTHENTICITY,
-            target_participant_id=participant_id,
-            delta_log_odds=delta,
-            confidence=confidence,
-            severity=severity,
-            flag_type="reading_pattern",
-            recommendation="Check if the candidate is looking at a phone/second screen while speaking.",
-            rationale=rationale,
-            timestamp=segment.start_time,
+            target_participant_id=analysis.segment.participant_id,
+            delta_log_odds=-0.8,
+            confidence=min(0.75, analysis.generic_score),
+            severity=FlagSeverity.INFO,
+            flag_type="generic_scripted_answer",
+            recommendation="Answer is generic and lacks concrete examples; may be rehearsed.",
+            rationale="Answer relies heavily on generic interview buzzwords without specifics.",
+            timestamp=analysis.segment.start_time,
             metadata={
-                "reading_score": round(score, 4),
-                "transition_density": round(transition_density, 4),
-                "repeated_score": round(repeated_score, 4),
-                "disfluency_rate": round(disfluency_rate, 4),
+                "generic_score": round(analysis.generic_score, 4),
                 "segment_text": text[:200],
             },
-        )]
+        )
 
-    # ------------------------------------------------------------------ #
-    # Heuristic: unnatural pause placement
-    # ------------------------------------------------------------------ #
-    def _detect_unnatural_pause(
-        self, segment: TranscriptSegment, participant_id: str
-    ) -> List[EvidencePacket]:
-        """Flag a long pause right before a polished answer.
-
-        The segment itself does not carry pause information; we infer the pause
-        from the gap between this segment's start and the previous segment's end
-        for the same speaker.
-        """
-        last_end = self._last_segment_end.get(participant_id)
+    def _build_pause_packet(self, analysis: SegmentAnalysis, segment: TranscriptSegment) -> Optional[EvidencePacket]:
+        last_end = self._last_segment_end.get(segment.participant_id)
         if last_end is None:
-            return []
+            return None
 
         pause_seconds = (segment.start_time - last_end).total_seconds()
-        if pause_seconds <= 0:
-            return []
+        if pause_seconds < 4.0:
+            return None
 
-        text = segment.text.strip()
-        fluency = self._structural_fluency(text)
+        fluency = self._structural_fluency(segment.text)
+        if fluency < 0.7:
+            return None
 
-        # The meaningful pattern: long pause (>4s) followed by highly fluent text.
-        if pause_seconds < 4.0 or fluency < 0.75:
-            return []
+        if analysis.ai_score < 0.6 and pause_seconds < 10.0:
+            return None
 
-        # Scale severity by pause length and fluency.
         score = min(1.0, (pause_seconds / 15.0) * fluency)
-        delta = -(score - 0.3) * 2.0
-        confidence = min(0.9, score)
-
-        return [EvidencePacket(
+        return EvidencePacket(
             source=SignalSource.UNNATURAL_PAUSE,
             axis=SignalAxis.AUTHENTICITY,
-            target_participant_id=participant_id,
-            delta_log_odds=delta,
-            confidence=confidence,
+            target_participant_id=segment.participant_id,
+            delta_log_odds=-(score - 0.3) * 2.0,
+            confidence=min(0.85, score),
             severity=FlagSeverity.WARNING,
             flag_type="unnatural_pause",
-            recommendation="Long pause before a polished answer may indicate the candidate looked up a response.",
+            recommendation="Long pause before a polished answer may indicate looking up a response.",
             rationale=(
                 f"Pause of {pause_seconds:.1f}s before a structurally fluent answer "
-                f"(fluency={fluency:.2f}) — decreased authenticity"
+                f"(fluency={fluency:.2f})."
             ),
             timestamp=segment.start_time,
             metadata={
                 "pause_seconds": round(pause_seconds, 2),
                 "answer_fluency": round(fluency, 4),
-                "segment_text": text[:200],
-            },
-        )]
-
-    # ------------------------------------------------------------------ #
-    # Optional LLM weak signal
-    # ------------------------------------------------------------------ #
-    def _llm_ai_signal(
-        self, segment: TranscriptSegment, participant_id: str
-    ) -> Optional[EvidencePacket]:
-        if self.llm_client is None:
-            return None
-
-        text = segment.text.strip()
-        if len(text.split()) < 10:
-            return None
-
-        system_prompt = (
-            "You are a weak sensor in a larger fusion engine. "
-            "Estimate whether the following spoken answer sounds like it was read from "
-            "AI-generated text or a hidden screen. Return ONLY a JSON object with keys: "
-            "ai_likelihood (float 0-1), reading_likelihood (float 0-1), one_line_reason. "
-            "Be conservative; low confidence should map to low scores."
-        )
-        prompt = f"Spoken answer:\n{text[:500]}\n\nProvide the JSON object."
-
-        try:
-            raw = self.llm_client.generate(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                max_tokens=256,
-            )
-            # Simple JSON extraction.
-            match = re.search(r'\{.*\}', raw, re.DOTALL)
-            if not match:
-                return None
-            import json
-            result = json.loads(match.group(0))
-            ai_score = float(result.get("ai_likelihood", 0.0))
-            reading_score = float(result.get("reading_likelihood", 0.0))
-        except Exception as exc:
-            logger.debug("LLM text authenticity signal skipped: %s", exc)
-            return None
-
-        combined = max(ai_score, reading_score)
-        if combined < 0.5:
-            return None
-
-        delta = -(combined - 0.4) * 1.5
-        return EvidencePacket(
-            source=SignalSource.AI_GENERATED_TEXT,
-            axis=SignalAxis.AUTHENTICITY,
-            target_participant_id=participant_id,
-            delta_log_odds=delta,
-            confidence=min(0.85, combined),
-            severity=FlagSeverity.INFO,
-            flag_type="llm_ai_text_signal",
-            recommendation="LLM sensor flagged this segment; corroborate with other signals.",
-            rationale=f"LLM sensor: {result.get('one_line_reason', 'AI/read pattern suspected')}",
-            timestamp=segment.start_time,
-            metadata={
-                "ai_likelihood": ai_score,
-                "reading_likelihood": reading_score,
-                "segment_text": text[:200],
+                "ai_score": round(analysis.ai_score, 4),
+                "segment_text": segment.text[:200],
             },
         )
 
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
-    @staticmethod
-    def _disfluency_rate(text: str) -> float:
-        lower = text.lower()
-        words = re.sub(r"[^\w\s']", " ", lower).split()
-        if not words:
+    def _candidate_baseline_ai(self) -> float:
+        if not self._candidate_ai_scores:
             return 0.0
-        fillers = sum(1 for w in words if w in FILLER_WORDS)
-        # Also count "you know" bigram once.
-        fillers += lower.count("you know")
-        return fillers / len(words)
+        sorted_scores = sorted(self._candidate_ai_scores[-10:])
+        return sorted_scores[len(sorted_scores) // 2]
 
     @staticmethod
     def _structural_fluency(text: str) -> float:
@@ -393,29 +303,20 @@ class TextAuthenticityPipeline:
         if len(sentences) < 2:
             return 0.5
         lengths = [len(s.split()) for s in sentences]
-        cv = TextAuthenticityPipeline._coefficient_of_variation(lengths)
-        return 1.0 / (1.0 + cv)
-
-    @staticmethod
-    def _coefficient_of_variation(values: List[int]) -> float:
-        if not values:
-            return 0.0
-        mean = sum(values) / len(values)
+        mean = sum(lengths) / len(lengths)
         if mean == 0:
             return 0.0
-        variance = sum((x - mean) ** 2 for x in values) / len(values)
+        variance = sum((x - mean) ** 2 for x in lengths) / len(lengths)
         std = math.sqrt(variance)
-        return std / mean
+        cv = std / mean
+        return 1.0 / (1.0 + cv)
 
-    @staticmethod
-    def _repeated_phrase_score(text: str) -> float:
-        """Detect repeated 4-grams (common when reading bullet points)."""
-        words = re.sub(r"[^\w\s']", " ", text.lower()).split()
-        if len(words) < 8:
+    def _semantic_similarity(self, question: str, answer: str) -> float:
+        if self.semantic_model is None:
+            return 1.0
+        embeddings = self.semantic_model.encode([question, answer])
+        a, b = embeddings[0], embeddings[1]
+        norm = (sum(a * a) ** 0.5) * (sum(b * b) ** 0.5)
+        if norm == 0:
             return 0.0
-        ngrams = [tuple(words[i:i+4]) for i in range(len(words) - 3)]
-        if not ngrams:
-            return 0.0
-        unique = set(ngrams)
-        repeated = len(ngrams) - len(unique)
-        return min(1.0, repeated / max(len(ngrams) * 0.3, 1.0))
+        return float(sum(a * b) / norm)

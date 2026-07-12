@@ -65,7 +65,7 @@ class RealtimeInferenceOrchestrator:
         self.gaze = gaze or GazeBehavioralPipeline(context)
         self.audio_authenticity = audio_authenticity or AudioAuthenticityPipeline(context)
         self.transcription = transcription or LiveTranscriptionPipeline(context)
-        self.text_authenticity = text_authenticity or TextAuthenticityPipeline(context)
+        self.text_authenticity = text_authenticity or self._build_text_authenticity(context)
         self._candidate_queue: asyncio.Queue = asyncio.Queue(maxsize=candidate_queue_size)
         self._running = False
         self._tasks: List[asyncio.Task] = []
@@ -73,6 +73,21 @@ class RealtimeInferenceOrchestrator:
         self.dropped_stale: int = 0
         self.transcript_segments = []
         self._behavioral = BehavioralSignalExtractor(context)
+
+    @staticmethod
+    def _build_text_authenticity(context):
+        from .pipelines.text_authenticity import TextAuthenticityPipeline
+
+        semantic_model = None
+        try:
+            from sentence_transformers import SentenceTransformer
+
+            semantic_model = SentenceTransformer("all-MiniLM-L6-v2")
+            logger.info("Loaded sentence-transformers model for Q/A relevance.")
+        except Exception as exc:
+            logger.info("Sentence-transformers not available: %s", exc)
+
+        return TextAuthenticityPipeline(context=context, semantic_model=semantic_model)
 
     # ----- public control --------------------------------------------- #
     async def start(self) -> None:
@@ -143,7 +158,7 @@ class RealtimeInferenceOrchestrator:
                     self.transcript_segments.append(seg)
                     self._behavioral.add_transcript_segment(seg)
                     # Text-level authenticity (AI-generated text, reading pattern, pauses).
-                    all_evidence.extend(self.text_authenticity.process(seg))
+                    all_evidence.extend(await self.text_authenticity.aprocess(seg))
                 # Convert transcript into identity/behavioral evidence.
                 all_evidence.extend(self._behavioral.extract_all())
                 if all_evidence:
@@ -154,9 +169,11 @@ class RealtimeInferenceOrchestrator:
     async def _run_candidate_pipelines(self, frame) -> None:
         packets: List[EvidencePacket] = []
         t0 = time.perf_counter()
+        loop = asyncio.get_event_loop()
         for pipeline in (self.deepfake, self.voice, self.gaze, self.audio_authenticity):
             try:
-                result = pipeline.process(frame)
+                # Run heavy CV/audio models in thread pool so the event loop stays alive.
+                result = await loop.run_in_executor(None, pipeline.process, frame)
             except Exception as exc:
                 logger.warning("%s crashed: %s", type(pipeline).__name__, exc)
                 continue

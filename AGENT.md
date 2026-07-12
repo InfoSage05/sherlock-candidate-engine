@@ -774,16 +774,22 @@ The operator dashboard now exposes a dedicated **Live Video Analysis** flow:
 5. **Flagged speech segments:** transcript lines that triggered AI-generated-text, reading-pattern, unnatural-pause, or AI-generated-speech signals are surfaced directly under the video with severity and rationale.
 6. **Full dashboard reuse:** the live snapshot is serialized into the same shape as replay snapshots, so the scoreboard, event feed, flags, evidence room, timeline, and candidate-info tabs all work without modification.
 
-### 10.7.1 Audio-First Cheating Detection Signals
+### 10.7.1 Advanced Cheating Detection Pipeline
 
-To specifically answer "is the candidate reading AI-generated text aloud?", the live path now runs two transcript-level and one audio-level signal:
+To answer "is the candidate reading AI-generated text aloud?" accurately on **real** videos, the live path now uses open-source ML models and conservative fusion:
 
-- **`AI_GENERATED_TEXT`** (`sherlock/pipelines/text_authenticity.py`): heuristic + optional LLM sensor that flags overly formal transitions, uniform sentence length, low personal language, and unnaturally low disfluency.  Combines into a single weak AUTHENTICITY evidence packet.
-- **`READING_PATTERN`** (`sherlock/pipelines/text_authenticity.py`): flags enumerated transitions, repeated phrases, and low filler rate that suggest reading from a hidden screen/phone.
-- **`UNNATURAL_PAUSE`** (`sherlock/pipelines/text_authenticity.py`): flags a long pause (>4s) followed by a structurally fluent answer, which is the distinctive "look it up then read it" signature.
-- **`AI_GENERATED_SPEECH`** (`sherlock/pipelines/audio_authenticity.py`): open-source audio anti-spoofing (SpeechBrain AASIST when installed, heuristic spectral/prosodic fallback otherwise).  Detects synthetic/TTS/cloned speech directly from the audio stream.
+- **`AI_GENERATED_TEXT`** (`sherlock/pipelines/text_authenticity.py` + `sherlock/pipelines/ai_text_detector.py`):
+  - Uses an open-source transformer model (`roberta-base-openai-detector`) to score P(text is AI-generated).
+  - Filters out common interview pleasantries ("thank you", "Do you have any questions?", etc.).
+  - Calibrates against the candidate's own baseline so articulate people are not penalised.
+  - Only emits a flag when the model confidence is high (≥0.75) and the answer is not generic/low-relevance.
+  - Heavy inference runs in a background thread pool so the real-time loop is not blocked.
+- **`READING_PATTERN`** / generic-scripted-answer (`sherlock/pipelines/text_authenticity.py`): flags answers that rely on buzzwords without concrete examples.
+- **`UNNATURAL_PAUSE`** (`sherlock/pipelines/text_authenticity.py`): flags a long pause followed by a structurally fluent answer.
+- **`AI_GENERATED_SPEECH`** (`sherlock/pipelines/audio_authenticity.py`): open-source audio anti-spoofing (SpeechBrain AASIST when available, heuristic spectral/prosodic fallback).  Detects synthetic/TTS/cloned speech directly from the audio stream.
+- **Q/A relevance** (`sentence-transformers` `all-MiniLM-L6-v2`): penalises answers that are semantically unrelated to the preceding interview question.
 
-All four are ingested into the existing `FusionEngine` on the `AUTHENTICITY` axis.  They are weak, independently-inspectable signals; the final verdict is driven by the fused authenticity probability, not any single flag.
+All signals are ingested into the existing `FusionEngine` on the `AUTHENTICITY` axis.  The final verdict is driven by the fused authenticity probability, not any single flag.  The first analysis is slower because the open-source models must download/load; the frontend shows a processing banner during this warm-up.
 
 ### 10.8 Definition of Done
 

@@ -237,6 +237,7 @@ async function startLive() {
         showDashboard();
         setupLiveVideo(startRes.video_url, startRes.video_title);
         updateLiveStatusRow(true, startRes.video_title);
+        showProcessingBanner(true);
         connectLiveWS();
 
         showToast('Live analysis started 🎥');
@@ -282,6 +283,7 @@ async function stopLive() {
     updateLiveStatusRow(false);
     setLiveConnectionStatus(false, 'idle');
     setLiveLoading(false);
+    showProcessingBanner(false);
     showLanding();
     showToast('Live analysis stopped');
 }
@@ -389,8 +391,18 @@ function updateLiveStatusRow(running, title = '') {
     }
 }
 
+function showProcessingBanner(show) {
+    const banner = $('#processingBanner');
+    if (banner) banner.style.display = show ? 'flex' : 'none';
+}
+
 function updateLiveVideoScores(data) {
     if (!data || data.status === 'no_data') return;
+
+    // Hide processing banner once real evidence starts arriving.
+    if ((data.evidence_count || 0) > 1) {
+        showProcessingBanner(false);
+    }
 
     const participant = data.participants?.[0];
     const identity = participant ? participant.identity_probability : (data.top_candidate_probability || 0);

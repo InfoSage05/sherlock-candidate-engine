@@ -197,13 +197,13 @@ class HeuristicAudioAuthenticityDetector(AudioAuthenticityDetector):
 def _default_detector() -> AudioAuthenticityDetector:
     """Return the best available detector.
 
-    By default the heuristic detector is used because it is fast enough for
-    real-time dashboards.  Set ``SHERLOCK_USE_SPEECHBRAIN=1`` to additionally
-    try the SpeechBrain AASIST open-source anti-spoofing model.
+    By default we try the open-source SpeechBrain AASIST anti-spoofing model.
+    If it fails to load, we fall back to the fast heuristic detector.
+    Set ``SHERLOCK_USE_HEURISTIC_AUDIO=1`` to force the heuristic detector.
     """
     import os
 
-    if os.environ.get("SHERLOCK_USE_SPEECHBRAIN") == "1":
+    if os.environ.get("SHERLOCK_USE_HEURISTIC_AUDIO") != "1":
         try:
             return SpeechBrainAntiSpoofingDetector()
         except Exception as exc:
