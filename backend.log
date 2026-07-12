@@ -233,3 +233,219 @@ INFO:server:WebSocket /ws/live disconnected
 INFO:     127.0.0.1:42830 - "WebSocket /ws/replay" [accepted]
 INFO:server:WebSocket /ws/replay connected
 INFO:     connection open
+INFO:     127.0.0.1:46534 - "GET /api/live/available HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54422 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54422 - "GET /static/styles.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54422 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54422 - "GET /api/scenarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54438 - "GET /api/live/info HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:52286 - "POST /api/live/upload HTTP/1.1" 200 OK
+/usr/lib/python3.12/traceback.py:673: RuntimeWarning: coroutine 'RealtimeInferenceOrchestrator.stop' was never awaited
+  yield textwrap.indent(text_gen, indent_str, lambda line: True)
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+ERROR:asyncio:Task was destroyed but it is pending!
+task: <Task pending name='Task-38' coro=<RealtimeInferenceOrchestrator.stop() running at /mnt/e/Machine Learning/ML Assignment/sherlock/orchestrator.py:102> cb=[_chain_future.<locals>._call_set_state() at /usr/lib/python3.12/asyncio/futures.py:394]>
+INFO:sherlock.orchestrator:Sentence-transformers not available: Could not load libtorchcodec. Likely causes:
+          1. FFmpeg is not properly installed in your environment. We support
+             versions 4, 5, 6, 7, and 8, and we attempt to load libtorchcodec
+             for each of those versions. Errors for versions not installed on
+             your system are expected; only the error for your installed FFmpeg
+             version is relevant. On Windows, ensure you've installed the
+             "full-shared" version which ships DLLs.
+          2. The PyTorch version (2.13.0+cu130) is not compatible with
+             this version of TorchCodec. Refer to the version compatibility
+             table:
+             https://github.com/pytorch/torchcodec?tab=readme-ov-file#installing-torchcodec.
+          3. Another runtime dependency; see exceptions below.
+
+        The following exceptions were raised as we tried to load libtorchcodec:
+        
+[start of libtorchcodec loading traceback]
+FFmpeg version 8:
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1516, in load_library
+    ctypes.CDLL(path)
+  File "/usr/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libavutil.so.60: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_internally_replaced_utils.py", line 93, in load_torchcodec_shared_libraries
+    torch.ops.load_library(core_library_path)
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1518, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core8.so
+
+FFmpeg version 7:
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1516, in load_library
+    ctypes.CDLL(path)
+  File "/usr/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libavutil.so.59: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_internally_replaced_utils.py", line 93, in load_torchcodec_shared_libraries
+    torch.ops.load_library(core_library_path)
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1518, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core7.so
+
+FFmpeg version 6:
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1516, in load_library
+    ctypes.CDLL(path)
+  File "/usr/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libavutil.so.58: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_internally_replaced_utils.py", line 93, in load_torchcodec_shared_libraries
+    torch.ops.load_library(core_library_path)
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1518, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core6.so
+
+FFmpeg version 5:
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1516, in load_library
+    ctypes.CDLL(path)
+  File "/usr/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libavutil.so.57: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_internally_replaced_utils.py", line 93, in load_torchcodec_shared_libraries
+    torch.ops.load_library(core_library_path)
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1518, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core5.so
+
+FFmpeg version 4:
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1516, in load_library
+    ctypes.CDLL(path)
+  File "/usr/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libavutil.so.56: cannot open shared object file: No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torchcodec/_internally_replaced_utils.py", line 93, in load_torchcodec_shared_libraries
+    torch.ops.load_library(core_library_path)
+  File "/home/ayushman/.local/lib/python3.12/site-packages/torch/_ops.py", line 1518, in load_library
+    raise OSError(f"Could not load this library: {path}") from e
+OSError: Could not load this library: /home/ayushman/.local/lib/python3.12/site-packages/torchcodec/libtorchcodec_core4.so
+[end of libtorchcodec loading traceback].
+INFO:     127.0.0.1:52286 - "POST /api/live/start HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52286 - "GET /api/live/video?_t=1783867576147 HTTP/1.1" 206 Partial Content
+INFO:sherlock.ingestion.file:FileSource opened /tmp/sherlock_uploads/1783867575_interview_2min.mp4
+INFO:sherlock.orchestrator:Orchestrator started.
+INFO:     127.0.0.1:52298 - "WebSocket /ws/live" [accepted]
+INFO:server:WebSocket /ws/live connected
+INFO:     connection open
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
+[2026-07-12 14:46:17.864] [ctranslate2] [thread 10602] [warning] The compute type inferred from the saved model is float16, but the target device or backend do not support efficient float16 computation. The model weights have been automatically converted to use the float32 compute type instead.
+INFO:faster_whisper:Processing audio with duration 00:02.019
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:sherlock.pipelines.ai_text_detector:Loading AI-text detector: roberta-base-openai-detector
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/config.json "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  56%|█████▌    | 112/201 [00:00<00:00, 1086.00it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 1198.93it/s]
+[transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-base-openai-detector
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 307 Temporary Redirect"
+INFO:httpx:HTTP Request: GET https://huggingface.co/api/models/openai-community/roberta-base-openai-detector/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+INFO:httpx:HTTP Request: HEAD https://huggingface.co/roberta-base-openai-detector/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     127.0.0.1:52296 - "POST /api/feedback/confirm HTTP/1.1" 200 OK
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     connection closed
+INFO:server:WebSocket /ws/live disconnected
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:faster_whisper:Processing audio with duration 00:02.020
+INFO:     connection closed
