@@ -5,6 +5,10 @@ Analyses candidate answers to detect:
 2. Generic / scripted / non-responsive answers.
 3. Unnatural pause + polished-answer pattern.
 
+Also emits positive AUTHENTICITY evidence when answers appear spontaneous,
+specific, and contextually relevant, so genuine candidates see their
+authenticity score rise instead of staying flat at 0.5.
+
 Heavy transformer inference is run in a background thread pool so it does not
 block the real-time audio/video ingestion loop.
 """
@@ -84,14 +88,18 @@ class TextAuthenticityPipeline:
     async def aprocess(self, segment: TranscriptSegment) -> List[EvidencePacket]:
         """Async entry point.  Heavy inference runs in a thread pool."""
         self._segments.append(segment)
+        logger.debug("TEXT_AUTH: processing segment len=%d text=%s", len(segment.text), segment.text[:60])
 
         if segment.is_question:
             self._last_question = segment
+            logger.debug("TEXT_AUTH: is_question, skipping")
             return []
 
         analysis = await asyncio.get_event_loop().run_in_executor(
             self._executor, self._analyse_answer, segment
         )
+        logger.debug("TEXT_AUTH: analysis ai=%.3f generic=%.3f rel=%.3f is_answer=%s",
+                     analysis.ai_score, analysis.generic_score, analysis.relevance_score, analysis.is_answer)
         if not analysis.is_answer:
             return []
 
@@ -108,7 +116,14 @@ class TextAuthenticityPipeline:
         if pause_packet:
             packets.append(pause_packet)
 
+        # Positive signal: genuine-looking answer (only if no negative flags).
+        if not packets:
+            genuine_packet = self._build_genuine_packet(analysis)
+            if genuine_packet:
+                packets.append(genuine_packet)
+
         self._last_segment_end[segment.participant_id] = segment.end_time
+        logger.debug("TEXT_AUTH: returning %d packets", len(packets))
         return packets
 
     def process(self, segment: TranscriptSegment) -> List[EvidencePacket]:
@@ -132,6 +147,11 @@ class TextAuthenticityPipeline:
         pause_packet = self._build_pause_packet(analysis, segment)
         if pause_packet:
             packets.append(pause_packet)
+
+        if not packets:
+            genuine_packet = self._build_genuine_packet(analysis)
+            if genuine_packet:
+                packets.append(genuine_packet)
 
         self._last_segment_end[segment.participant_id] = segment.end_time
         return packets
@@ -285,6 +305,60 @@ class TextAuthenticityPipeline:
                 "answer_fluency": round(fluency, 4),
                 "ai_score": round(analysis.ai_score, 4),
                 "segment_text": segment.text[:200],
+            },
+        )
+
+    def _build_genuine_packet(self, analysis: SegmentAnalysis) -> Optional[EvidencePacket]:
+        """Emit positive authenticity evidence for spontaneous, specific answers."""
+        text = analysis.segment.text.strip()
+        words = text.split()
+        lower = text.lower()
+        specificity_signals = [
+            bool(re.search(r"\b\d+\b", text)),
+            "for example" in lower,
+            "instance" in lower,
+            "project" in lower,
+            "worked on" in lower,
+            "i " in lower or "i'm " in lower or "my " in lower,
+            "we " in lower or "our " in lower,
+            "at " in lower and any(tok[0].isupper() for tok in words[1:] if tok),
+        ]
+        logger.debug("TEXT_AUTH genuine check: ai=%.3f generic=%.3f rel=%.3f words=%d signals=%d/%d text=%s",
+                     analysis.ai_score, analysis.generic_score, analysis.relevance_score,
+                     len(words), sum(specificity_signals), len(specificity_signals), text[:60])
+        if analysis.ai_score >= 0.6:
+            return None
+        if analysis.generic_score >= 0.3:
+            return None
+        if analysis.relevance_score < 0.25:
+            return None
+        if len(words) < 6:
+            return None
+        if sum(specificity_signals) < 1:
+            return None
+
+        confidence = min(0.75, 0.4 + (0.5 - analysis.ai_score) * 0.8 + analysis.relevance_score * 0.2)
+        delta = (0.5 - analysis.ai_score) * 1.0 + 0.15
+
+        return EvidencePacket(
+            source=SignalSource.HUMAN_SPONTANEOUS_TEXT,
+            axis=SignalAxis.AUTHENTICITY,
+            target_participant_id=analysis.segment.participant_id,
+            delta_log_odds=delta,
+            confidence=confidence,
+            severity=FlagSeverity.NONE,
+            flag_type="genuine_answer",
+            recommendation="",
+            rationale=(
+                f"Answer appears spontaneous and relevant "
+                f"(AI score {analysis.ai_score:.2f}, relevance {analysis.relevance_score:.2f})."
+            ),
+            timestamp=analysis.segment.start_time,
+            metadata={
+                "ai_score": round(analysis.ai_score, 4),
+                "relevance_score": round(analysis.relevance_score, 4),
+                "segment_text": text[:200],
+                "model": getattr(self.ai_detector, "model_name", "unknown"),
             },
         )
 

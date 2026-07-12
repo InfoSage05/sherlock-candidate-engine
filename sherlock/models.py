@@ -27,6 +27,7 @@ class SignalSource(str, Enum):
     VOICE_LIVENESS = "voice_liveness"
     AI_GENERATED_TEXT = "ai_generated_text"
     AI_GENERATED_SPEECH = "ai_generated_speech"
+    HUMAN_SPONTANEOUS_TEXT = "human_spontaneous_text"
     READING_PATTERN = "reading_pattern"
     UNNATURAL_PAUSE = "unnatural_pause"
     IDENTITY_UNCERTAIN = "identity_uncertain"

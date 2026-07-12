@@ -1137,6 +1137,7 @@ function showDashboard() {
     $('#playbackControls').style.display = appState.liveMode ? 'none' : '';
     $('#progressDisplay').style.display = '';
     $('#loadBtn').style.display = 'none';
+    $('#newAnalysisBtn').style.display = 'inline-flex';
 
     if (appState.liveMode) {
         $('#liveVideoPanel').style.display = 'block';
@@ -1152,6 +1153,7 @@ function showLanding() {
     $('#playbackControls').style.display = 'none';
     $('#progressDisplay').style.display = 'none';
     $('#liveVideoPanel').style.display = 'none';
+    $('#newAnalysisBtn').style.display = 'none';
 }
 
 function updatePlayButton() {
@@ -1179,6 +1181,13 @@ function setupEventHandlers() {
     // Live analysis start/stop
     $('#liveStartBtn')?.addEventListener('click', startLive);
     $('#liveStopBtn')?.addEventListener('click', stopLive);
+    $('#newAnalysisBtn')?.addEventListener('click', async () => {
+        await stopLive();
+        showLanding();
+        // Scroll the upload panel into view.
+        const panel = $('.live-panel');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 
     // Sync live video current time to elapsed display
     const liveVideo = $('#liveVideo');

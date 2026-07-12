@@ -26,7 +26,7 @@ from typing import List, Optional
 from .fusion import FusionEngine
 from .gate import CandidateStreamGate
 from .ingestion.base import MediaSource
-from .models import EvidencePacket, RawMediaFrame
+from .models import EvidencePacket, FlagSeverity, RawMediaFrame, SignalAxis, SignalSource
 from .signals.behavioral import BehavioralSignalExtractor
 from .pipelines.audio_authenticity import AudioAuthenticityPipeline
 from .pipelines.deepfake import DeepfakeVideoPipeline
@@ -163,6 +163,24 @@ class RealtimeInferenceOrchestrator:
                 all_evidence.extend(self._behavioral.extract_all())
                 if all_evidence:
                     self.engine.ingest_batch(all_evidence)
+
+                # Lightweight per-segment activity boost for the current speaker.
+                # This keeps the scoreboard moving continuously while someone talks.
+                for seg in segments:
+                    if seg.participant_id and self.gate.candidate_id and seg.participant_id == self.gate.candidate_id:
+                        self.engine.ingest_batch([EvidencePacket(
+                            source=SignalSource.TURN_TAKING,
+                            axis=SignalAxis.IDENTITY,
+                            target_participant_id=seg.participant_id,
+                            delta_log_odds=0.08,
+                            confidence=0.25,
+                            severity=FlagSeverity.NONE,
+                            flag_type="candidate_speech_activity",
+                            recommendation="",
+                            rationale="Candidate is actively speaking.",
+                            timestamp=seg.start_time,
+                            metadata={"segment_text": seg.text[:80]},
+                        )])
         except Exception as exc:
             logger.warning("Transcription pipeline error: %s", exc)
 

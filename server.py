@@ -666,8 +666,10 @@ async def start_live(req: LiveStartRequest):
 @app.post("/api/live/upload")
 async def upload_live_video(file: UploadFile = File(...)):
     """Upload a video file for live analysis and return a token."""
-    ext = Path(file.filename or "video.mp4").suffix
-    token = f"{int(time.time())}_{file.filename or 'upload'}"
+    filename = file.filename or "video.mp4"
+    stem = Path(filename).stem
+    ext = Path(filename).suffix or ".mp4"
+    token = f"{int(time.time())}_{stem}"
     dest = UPLOAD_DIR / f"{token}{ext}"
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -946,7 +948,7 @@ async def ws_replay(websocket: WebSocket):
 
 @app.websocket("/ws/live")
 async def ws_live(websocket: WebSocket):
-    """WebSocket for live A/V analysis updates (streams dashboard snapshots every ~1s)."""
+    """WebSocket for live A/V analysis updates (streams dashboard snapshots ~3×/s)."""
     await websocket.accept()
     logger.info("WebSocket /ws/live connected")
 
@@ -960,7 +962,7 @@ async def ws_live(websocket: WebSocket):
                 await websocket.send_json(snapshot)
             else:
                 await websocket.send_json({"state": "idle", "status": "no_data"})
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(0.3)
     except WebSocketDisconnect:
         logger.info("WebSocket /ws/live disconnected")
     except Exception as e:

@@ -42,6 +42,8 @@
             <span class="text-xs color-muted font-mono" id="speedLabel">1×</span>
         </div>
 
+        <button class="btn btn-primary" id="newAnalysisBtn" style="display:none; margin-left:auto;">🎥 New Analysis</button>
+
         <div class="top-bar__progress" id="progressDisplay" style="display:none;">
             <div class="top-bar__progress-label">Progress</div>
             <div class="top-bar__progress-value" id="progressValue">0%</div>
@@ -89,39 +91,46 @@
         <p class="text-sm color-muted mb-md">Pick an edge-case scenario to watch Sherlock identify the candidate in real time.</p>
         <div class="scenario-grid" id="scenarioGrid"></div>
 
-        <h2 class="section-title">Or analyse a video live</h2>
-        <p class="text-sm color-muted mb-md">Upload a local video, paste a YouTube link, or provide a file path. Sherlock will score identity and authenticity in real time while the video plays.</p>
-        <div class="live-panel card">
-            <div class="card__header"><span class="card__header-icon">🎥</span> Live Video Analysis</div>
-
-            <div class="live-inputs">
-                <div class="input-group">
-                    <label>Upload video</label>
-                    <input type="file" id="liveUploadInput" accept="video/*">
-                </div>
-                <div class="input-group wide">
-                    <label>YouTube URL</label>
-                    <input type="text" id="liveYoutubeInput" placeholder="https://youtube.com/watch?v=...">
-                </div>
-                <div class="input-group wide">
-                    <label>Local file path</label>
-                    <input type="text" id="livePathInput" placeholder="/path/to/interview.mp4">
-                </div>
-                <div class="input-group">
-                    <label>Candidate name</label>
-                    <input type="text" id="liveCandidateInput" value="Candidate">
-                </div>
-                <div class="input-group actions">
-                    <label>&nbsp;</label>
-                    <button class="btn btn-primary" id="liveStartBtn">▶ Start Analysis</button>
+        <div class="live-analysis-section">
+            <div class="live-analysis-section__header">
+                <span class="live-analysis-section__icon">🎥</span>
+                <div>
+                    <h2 class="live-analysis-section__title">Analyse a video live</h2>
+                    <p class="live-analysis-section__subtitle">Upload a local video, paste a YouTube link, or provide a file path. Sherlock scores identity and authenticity in real time while the video plays.</p>
                 </div>
             </div>
+            <div class="live-panel card">
+                <div class="card__header"><span class="card__header-icon">🎥</span> Live Video Analysis</div>
 
-            <div class="live-status-row" id="liveStatusRow" style="display:none;">
-                <span class="live-dot" id="liveDot"></span>
-                <span id="liveStatusText">Idle</span>
-                <span id="liveVideoTitle" class="live-video-title"></span>
-                <button class="btn btn-danger" id="liveStopBtn" style="margin-left:auto;">⏹ Stop</button>
+                <div class="live-inputs">
+                    <div class="input-group">
+                        <label>📁 Upload video</label>
+                        <input type="file" id="liveUploadInput" accept="video/*">
+                    </div>
+                    <div class="input-group wide">
+                        <label>🔗 YouTube URL</label>
+                        <input type="text" id="liveYoutubeInput" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    <div class="input-group wide">
+                        <label>💻 Local file path</label>
+                        <input type="text" id="livePathInput" placeholder="/path/to/interview.mp4">
+                    </div>
+                    <div class="input-group">
+                        <label>👤 Candidate name</label>
+                        <input type="text" id="liveCandidateInput" value="Candidate">
+                    </div>
+                    <div class="input-group actions">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary" id="liveStartBtn">▶ Start Analysis</button>
+                    </div>
+                </div>
+
+                <div class="live-status-row" id="liveStatusRow" style="display:none;">
+                    <span class="live-dot" id="liveDot"></span>
+                    <span id="liveStatusText">Idle</span>
+                    <span id="liveVideoTitle" class="live-video-title"></span>
+                    <button class="btn btn-danger" id="liveStopBtn" style="margin-left:auto;">⏹ Stop</button>
+                </div>
             </div>
         </div>
     </div>
